@@ -1,6 +1,6 @@
 # doc-generator
 
-Tooling for generating documentation for iceoryx2.
+Tooling for generating user documentation for iceoryx2.
 
 ## Setup
 
@@ -8,7 +8,24 @@ Tooling for generating documentation for iceoryx2.
     ```console
     curl -sSL https://install.python-poetry.org | python3 -
     ```
+1. Install dependencies
+    ```console
+    cd internal/doc-generator/
+    make install
+    ```
 
 ## Development
 
-TODO
+### Running the Development Server
+
+```console
+cd internal/doc-generator/
+make serve
+```
+
+### Building the Documentation
+
+```console
+cd internal/doc-generator/
+make html
+```
