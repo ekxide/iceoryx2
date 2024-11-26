@@ -21,7 +21,7 @@ iceoryx2-cli
 ============
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    iceoryx2-cli/node
    iceoryx2-cli/service

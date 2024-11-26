@@ -27,4 +27,9 @@ iceoryx2
 
    reference/index
 
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+
+   api/index
 

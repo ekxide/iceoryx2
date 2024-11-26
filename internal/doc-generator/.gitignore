@@ -1,4 +1,5 @@
 source/_build/
+source/api/cxx/
 poetry.lock
 __pycache__/
 *.pyc
