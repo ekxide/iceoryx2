@@ -48,7 +48,7 @@ void iceoryx2_fd_clr(const int fd, fd_set* set) {
 }
 
 int iceoryx2_fd_isset(const int fd, const fd_set* set) {
-    return FD_ISSET(fd, set);
+    return (int) FD_ISSET(fd, set);
 }
 
 void iceoryx2_fd_set(const int fd, fd_set* set) {

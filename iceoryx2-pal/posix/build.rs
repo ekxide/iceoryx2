@@ -15,47 +15,58 @@ fn main() {}
 
 #[cfg(not(feature = "libc_platform"))]
 fn main() {
-    extern crate bindgen;
-    extern crate cc;
+    // needed for bazel but can be empty for cargo builds
+    println!("cargo:rustc-env=BAZEL_BINDGEN_PATH_CORRECTION=");
 
-    use bindgen::*;
-    use std::env;
-    use std::path::PathBuf;
+    // when cross compiling, 'target_os' is set to the environment the build script
+    // is executed; to get the actual target OS, use the cargo 'TARGET' env variable
+    let target = std::env::var("TARGET").unwrap();
+    println!("Building for target: {}", target);
 
-    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-    println!("cargo:rustc-link-lib=pthread");
+    // the check for 'vxworks' in the next line refers to native compilation
+    // and prevents to pull in bindgen
+    #[cfg(not(target_os = "vxworks"))]
+    // the check for 'vxworks' in the next line refers to cross compilation
+    if !target.contains("vxworks") {
+        extern crate bindgen;
 
-    println!("cargo:rerun-if-changed=src/c/posix.h");
+        use bindgen::*;
+        use std::env;
+        use std::path::PathBuf;
 
-    let bindings = if std::env::var("DOCS_RS").is_ok() {
-        bindgen::Builder::default()
-            .header("src/c/posix.h")
-            .blocklist_type("max_align_t")
-            .parse_callbacks(Box::new(CargoCallbacks::new()))
-            .clang_arg("-D IOX2_DOCS_RS_SUPPORT")
-            .use_core()
-            .generate()
-            .expect("Unable to generate bindings")
-    } else {
-        {
+        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+        println!("cargo:rustc-link-lib=pthread");
+
+        println!("cargo:rerun-if-changed=src/c/posix.h");
+
+        let bindings = if std::env::var("DOCS_RS").is_ok() {
             bindgen::Builder::default()
                 .header("src/c/posix.h")
                 .blocklist_type("max_align_t")
                 .parse_callbacks(Box::new(CargoCallbacks::new()))
+                .clang_arg("-D IOX2_DOCS_RS_SUPPORT")
                 .use_core()
                 .generate()
                 .expect("Unable to generate bindings")
-        }
-    };
+        } else {
+            {
+                bindgen::Builder::default()
+                    .header("src/c/posix.h")
+                    .blocklist_type("max_align_t")
+                    .parse_callbacks(Box::new(CargoCallbacks::new()))
+                    .use_core()
+                    .generate()
+                    .expect("Unable to generate bindings")
+            }
+        };
 
-    // needed for bazel but can be empty for cargo builds
-    println!("cargo:rustc-env=BAZEL_BINDGEN_PATH_CORRECTION=");
+        let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+        bindings
+            .write_to_file(out_path.join("posix_generated.rs"))
+            .expect("Couldn't write bindings!");
+    }
 
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings
-        .write_to_file(out_path.join("posix_generated.rs"))
-        .expect("Couldn't write bindings!");
-
+    extern crate cc;
     println!("cargo:rerun-if-changed=src/c/socket_macros.c");
     cc::Build::new()
         .file("src/c/socket_macros.c")

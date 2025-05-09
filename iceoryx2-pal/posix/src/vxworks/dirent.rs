@@ -32,7 +32,7 @@ pub unsafe fn closedir(dirp: *mut DIR) -> int {
 }
 
 pub unsafe fn dirfd(dirp: *mut DIR) -> int {
-    libc::dirfd(dirp)
+    internal::dirfd(dirp)
 }
 
 pub unsafe fn readdir(dirp: *mut DIR) -> *const dirent {
@@ -41,4 +41,12 @@ pub unsafe fn readdir(dirp: *mut DIR) -> *const dirent {
 
 pub unsafe fn readdir_r(dirp: *mut DIR, entry: *mut dirent, result: *mut *mut dirent) -> int {
     libc::readdir_r(dirp, entry, result)
+}
+
+mod internal {
+    use super::*;
+
+    extern "C" {
+        pub(super) fn dirfd(dirp: *mut DIR) -> int;
+    }
 }

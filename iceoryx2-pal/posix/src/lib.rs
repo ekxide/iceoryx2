@@ -30,11 +30,14 @@ mod platform;
 #[cfg(all(target_os = "linux", not(feature = "libc_platform")))]
 #[path = "linux/mod.rs"]
 pub mod platform;
+#[cfg(all(target_os = "vxworks", not(feature = "libc_platform")))]
+#[path = "vxworks/mod.rs"]
+pub mod platform;
 #[cfg(all(target_os = "windows", not(feature = "libc_platform")))]
 #[path = "windows/mod.rs"]
 mod platform;
 
-#[cfg(not(feature = "libc_platform"))]
+#[cfg(not(any(target_os = "vxworks", feature = "libc_platform")))]
 pub(crate) mod internal {
     #![allow(non_upper_case_globals)]
     #![allow(non_camel_case_types)]
@@ -52,7 +55,7 @@ pub(crate) mod internal {
     pub const ESUCCES: u32 = 0;
 }
 
-#[cfg(feature = "libc_platform")]
+#[cfg(any(target_os = "vxworks", feature = "libc_platform"))]
 pub(crate) mod internal {
     pub use libc::*;
 }

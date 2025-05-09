@@ -19,9 +19,9 @@ pub unsafe fn socketpair(
     domain: int,
     socket_type: int,
     protocol: int,
-    socket_vector: *mut int, // actually it shall be [int; 2]
+    socket_vector: *mut int, // actually it shall be [int; 2] // TODO adjust the API to pass a '&mut [int; 2]'
 ) -> int {
-    libc::socketpair(domain, socket_type, protocol, socket_vector)
+    internal::ipcom_socketpair(domain, socket_type, protocol, socket_vector)
 }
 
 pub unsafe fn setsockopt(
@@ -96,4 +96,17 @@ pub unsafe fn recvfrom(
 
 pub unsafe fn recv(socket: int, buffer: *mut void, length: size_t, flags: int) -> ssize_t {
     libc::recv(socket, buffer, length, flags)
+}
+mod internal {
+    use super::*;
+
+    extern "C" {
+        pub(super) fn ipcom_socketpair(
+            domain: int,
+            socket_type: int,
+            protocol: int,
+            socket_vector: *mut int, // actually it shall be [int; 2] // TODO check if '&mut [int; 2]' also works at the FFI boundary
+        ) -> int;
+
+    }
 }

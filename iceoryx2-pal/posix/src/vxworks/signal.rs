@@ -24,7 +24,14 @@ impl MemZeroedStruct for sigaction_t {}
 
 impl sigaction_t {
     pub fn set_handler(&mut self, handler: sighandler_t) {
-        self.0.sa_sigaction = handler;
+        unsafe {
+            self.0.sa_u.sa_handler = core::mem::transmute::<
+                usize,
+                // FIXME HIGH PRIO the libc VxWorks sa_handler requires a noreturn function; check if this is a bug in the libc crate or indeed required by VxWorks;
+                // we currently use this with functions that return
+                core::option::Option<unsafe extern "C" fn(i32) -> !>,
+            >(handler);
+        }
     }
 
     pub fn flags(&self) -> int {
@@ -38,19 +45,14 @@ impl sigaction_t {
 
 impl core::fmt::Debug for sigaction_t {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        #[cfg(target_pointer_width = "32")]
-        type sa_mask_underlying = [u32; 32];
-        #[cfg(target_pointer_width = "64")]
-        type sa_mask_underlying = [u64; 16];
-
-        let sa_mask = unsafe {
+        let sa_handler = unsafe {
             #[allow(clippy::missing_transmute_annotations)]
-            core::mem::transmute::<_, sa_mask_underlying>(self.0.sa_mask)
+            core::mem::transmute::<_, usize>(self.0.sa_u)
         };
 
         f.debug_struct("sigaction_t")
-            .field("sa_sigaction", &self.0.sa_sigaction)
-            .field("sa_mask", &sa_mask)
+            .field("sa_u", &sa_handler)
+            .field("sa_mask", &self.0.sa_mask)
             .field("sa_flags", &self.0.sa_flags)
             .finish()
     }

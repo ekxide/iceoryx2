@@ -41,7 +41,7 @@ pub unsafe fn shm_unlink(name: *const c_char) -> int {
 
 pub unsafe fn shm_list() -> Vec<[i8; 256]> {
     let mut result = vec![];
-    let dir = opendir(c"/dev/shm/".as_ptr().cast());
+    let dir = opendir("/dev/shm/\0".as_ptr().cast());
     if dir.is_null() {
         return result;
     }

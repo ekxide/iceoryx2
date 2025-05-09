@@ -59,16 +59,42 @@ pub type uint = libc::c_uint;
 pub type ushort = libc::c_ushort;
 pub type void = core::ffi::c_void;
 
-pub(crate) type native_cpu_set_t = libc::cpu_set_t;
+pub(crate) type native_cpu_set_t = libc::cpuset_t;
 impl MemZeroedStruct for native_cpu_set_t {}
 
-pub type sigset_t = libc::sigset_t;
-impl MemZeroedStruct for sigset_t {}
+// TODO it seems pthread_t and sigset_t are just a typedef to u64 which leads to errors implementing 'Struct';
+//      since sigset_t is not used, it could just as well be removed
+// pub type sigset_t = libc::sigset_t;
+// impl MemZeroedStruct for sigset_t {}
 
-pub type pthread_barrier_t = libc::pthread_barrier_t;
+const _PTHREAD_SHARED_SEM_NAME_MAX: usize = 30;
+
+#[repr(C)]
+struct _Vx_semaphore {
+    _dummy: u64,
+}
+
+type SEM_ID = *mut _Vx_semaphore;
+
+#[repr(C)]
+pub struct pthread_barrier_t {
+    serialization_grab: uint,
+    user_count: uint,
+    session_count: uint,
+    barrier_valid: int,
+    barrier_attr: pthread_barrierattr_t,
+    barrier_mutex: SEM_ID,
+    barrier_sem: SEM_ID,
+    barrier_mutex_name: [c_char; _PTHREAD_SHARED_SEM_NAME_MAX],
+    barrier_semaphore_name: [c_char; _PTHREAD_SHARED_SEM_NAME_MAX],
+}
 impl MemZeroedStruct for pthread_barrier_t {}
 
-pub type pthread_barrierattr_t = libc::pthread_barrierattr_t;
+#[repr(C)]
+pub struct pthread_barrierattr_t {
+    status: int,
+    pshared: int,
+}
 impl MemZeroedStruct for pthread_barrierattr_t {}
 
 pub type pthread_attr_t = libc::pthread_attr_t;
@@ -89,10 +115,27 @@ impl MemZeroedStruct for pthread_mutex_t {}
 pub type pthread_mutexattr_t = libc::pthread_mutexattr_t;
 impl MemZeroedStruct for pthread_mutexattr_t {}
 
-pub type sem_t = libc::sem_t;
+// according to vxsdk/sysroot/usr/h/public/semaphore.h, the original sem_t
+// structure was 8 bytes and it needs to stay the same for backward compatibility;
+// the actual sem_t is a mess of structs and unions;
+// this should be safe since we do not access the fields directly but
+// the alignment might need to be 8 -> TODO test the alignment with a C library
+// that returns size and alignment of sem_t
+#[repr(C, align(4))]
+pub struct sem_t {
+    _dummy: [u8; 8],
+}
 impl MemZeroedStruct for sem_t {}
 
-pub type flock = libc::flock;
+#[repr(C)]
+pub struct flock {
+    pub l_type: short,
+    pub l_whence: short,
+    pub l_start: off_t,
+    pub l_len: off_t,
+    pub l_pid: pid_t,
+}
+
 impl MemZeroedStruct for flock {}
 
 pub type rlimit = libc::rlimit;
@@ -147,7 +190,19 @@ impl MemZeroedStruct for timespec {}
 pub type timeval = libc::timeval;
 impl MemZeroedStruct for timeval {}
 
-pub type fd_set = libc::fd_set;
+// this is more messy than sem_t since `FD_SETSIZE` can be set by the user;
+// it seems by default `FD_SETSIZE` is set to `2048`;
+// TODO this needs thorough testing
+type fd_mask = long;
+const FD_SETSIZE: usize = 2048;
+const BITS_PER_BYTE: usize = 8;
+const BITS_PER_FD_MASK: usize = core::mem::size_of::<fd_mask>() * BITS_PER_BYTE;
+const NUMBER_OF_FD_MASK_BLOCKS: usize = (FD_SETSIZE + BITS_PER_FD_MASK - 1) / BITS_PER_FD_MASK;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct fd_set {
+    fds_bits: [fd_mask; NUMBER_OF_FD_MASK_BLOCKS],
+}
 impl MemZeroedStruct for fd_set {}
 
 pub type dirent = libc::dirent;
@@ -181,8 +236,25 @@ impl SockAddrIn for sockaddr_in {
     }
 }
 
-pub type passwd = libc::passwd;
+#[repr(C)]
+pub struct passwd {
+    pub pw_name: *mut c_char,
+    pub pw_uid: uid_t,
+    pub pw_gid: gid_t,
+    pub pw_dir: *mut c_char,
+    pub pw_shell: *mut c_char,
+}
+
+// pub type passwd = libc::passwd;
 impl MemZeroedStruct for passwd {}
 
-pub type group = libc::group;
+#[repr(C)]
+pub struct group {
+    pub gr_name: *mut c_char,
+    pub gr_passwd: *mut c_char,
+    pub gr_gid: int,
+    pub gr_mem: *mut *mut c_char,
+}
+
+// pub type group = libc::group;
 impl MemZeroedStruct for group {}

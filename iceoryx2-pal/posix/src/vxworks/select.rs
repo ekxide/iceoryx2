@@ -22,7 +22,7 @@ pub unsafe fn select(
     errorfds: *mut fd_set,
     timeout: *mut timeval,
 ) -> int {
-    libc::select(nfds, readfds, writefds, errorfds, timeout)
+    internal::select(nfds, readfds, writefds, errorfds, timeout)
 }
 
 pub unsafe fn CMSG_SPACE(length: size_t) -> size_t {
@@ -46,17 +46,36 @@ pub unsafe fn CMSG_DATA(cmsg: *mut cmsghdr) -> *mut uchar {
 }
 
 pub unsafe fn FD_CLR(fd: int, set: *mut fd_set) {
-    libc::FD_CLR(fd, set)
+    internal::iceoryx2_fd_clr(fd, set);
 }
 
 pub unsafe fn FD_ISSET(fd: int, set: *const fd_set) -> bool {
-    libc::FD_ISSET(fd, set)
+    internal::iceoryx2_fd_isset(fd, set) != 0
 }
 
 pub unsafe fn FD_SET(fd: int, set: *mut fd_set) {
-    libc::FD_SET(fd, set)
+    internal::iceoryx2_fd_set(fd, set)
 }
 
 pub unsafe fn FD_ZERO(set: *mut fd_set) {
-    libc::FD_ZERO(set)
+    internal::iceoryx2_fd_zero(set)
+}
+
+mod internal {
+    use super::*;
+
+    extern "C" {
+        pub(super) fn select(
+            nfds: int,
+            readfds: *mut fd_set,
+            writefds: *mut fd_set,
+            errorfds: *mut fd_set,
+            timeout: *mut timeval,
+        ) -> int;
+
+        pub(super) fn iceoryx2_fd_clr(fd: int, set: *mut fd_set);
+        pub(super) fn iceoryx2_fd_isset(fd: int, set: *const fd_set) -> int;
+        pub(super) fn iceoryx2_fd_set(fd: int, set: *mut fd_set);
+        pub(super) fn iceoryx2_fd_zero(set: *mut fd_set);
+    }
 }
