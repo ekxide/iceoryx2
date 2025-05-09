@@ -44,6 +44,15 @@ fn main() {
     if BINDGEN_PLATFORMS.contains(&target_os.as_str()) {
         bindgen::run(target_os.as_str());
     }
+
+    // TODO move the socket_macros compilation out of bindgen and create a NEEDS_SOCKET_MACROS array with a list of all platforms that require something from socket_macros.c
+    if target_os == "vxworks" {
+        println!("cargo:rerun-if-changed=src/c/socket_macros.c");
+        extern crate cc;
+        cc::Build::new()
+            .file("src/c/socket_macros.c")
+            .compile("libsocket_macros.a");
+    }
 }
 
 fn configure_platform_override() {

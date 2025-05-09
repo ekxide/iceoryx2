@@ -16,41 +16,65 @@
 use crate::posix::types::*;
 
 pub unsafe fn sem_create(name: *const c_char, oflag: int, mode: mode_t, value: uint) -> *mut sem_t {
-    unsafe { libc::sem_open(name, oflag, mode, value) }
+    unsafe { internal::sem_open(name, oflag, mode, value) }
 }
 
 pub unsafe fn sem_post(sem: *mut sem_t) -> int {
-    unsafe { libc::sem_post(sem) }
+    unsafe { internal::sem_post(sem) }
 }
 
 pub unsafe fn sem_wait(sem: *mut sem_t) -> int {
-    unsafe { libc::sem_wait(sem) }
+    unsafe { internal::sem_wait(sem) }
 }
 
 pub unsafe fn sem_trywait(sem: *mut sem_t) -> int {
-    unsafe { libc::sem_trywait(sem) }
+    unsafe { internal::sem_trywait(sem) }
 }
 
 pub unsafe fn sem_timedwait(sem: *mut sem_t, abs_timeout: *const timespec) -> int {
-    unsafe { libc::sem_timedwait(sem, abs_timeout) }
+    unsafe { internal::sem_timedwait(sem, abs_timeout) }
 }
 
 pub unsafe fn sem_unlink(name: *const c_char) -> int {
-    unsafe { libc::sem_unlink(name) }
+    unsafe { internal::sem_unlink(name) }
 }
 
 pub unsafe fn sem_open(name: *const c_char, oflag: int) -> *mut sem_t {
-    unsafe { libc::sem_open(name, oflag) }
+    unsafe { internal::sem_open(name, oflag) }
 }
 
 pub unsafe fn sem_destroy(sem: *mut sem_t) -> int {
-    unsafe { libc::sem_destroy(sem) }
+    unsafe { internal::sem_destroy(sem) }
 }
 
 pub unsafe fn sem_init(sem: *mut sem_t, pshared: int, value: uint) -> int {
-    unsafe { libc::sem_init(sem, pshared, value) }
+    unsafe { internal::sem_init(sem, pshared, value) }
 }
 
 pub unsafe fn sem_close(sem: *mut sem_t) -> int {
-    unsafe { libc::sem_close(sem) }
+    unsafe { internal::sem_close(sem) }
+}
+
+mod internal {
+    use super::*;
+
+    unsafe extern "C" {
+        pub(super) fn sem_open(name: *const c_char, oflag: int, ...) -> *mut sem_t;
+
+        pub(super) fn sem_post(sem: *mut sem_t) -> int;
+
+        pub(super) fn sem_wait(sem: *mut sem_t) -> int;
+
+        pub(super) fn sem_trywait(sem: *mut sem_t) -> int;
+
+        pub(super) fn sem_timedwait(sem: *mut sem_t, abs_timeout: *const timespec) -> int;
+
+        pub(super) fn sem_unlink(name: *const c_char) -> int;
+
+        pub(super) fn sem_destroy(sem: *mut sem_t) -> int;
+
+        pub(super) fn sem_init(sem: *mut sem_t, pshared: int, value: uint) -> int;
+
+        pub(super) fn sem_close(sem: *mut sem_t) -> int;
+    }
 }

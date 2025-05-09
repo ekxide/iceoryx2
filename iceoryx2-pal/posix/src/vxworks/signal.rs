@@ -38,19 +38,9 @@ impl sigaction_t {
 
 impl core::fmt::Debug for sigaction_t {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        #[cfg(target_pointer_width = "32")]
-        type sa_mask_underlying = [u32; 32];
-        #[cfg(target_pointer_width = "64")]
-        type sa_mask_underlying = [u64; 16];
-
-        let sa_mask = unsafe {
-            #[allow(clippy::missing_transmute_annotations)]
-            core::mem::transmute::<_, sa_mask_underlying>(self.0.sa_mask)
-        };
-
         f.debug_struct("sigaction_t")
             .field("sa_sigaction", &self.0.sa_sigaction)
-            .field("sa_mask", &sa_mask)
+            .field("sa_mask", &self.0.sa_mask)
             .field("sa_flags", &self.0.sa_flags)
             .finish()
     }

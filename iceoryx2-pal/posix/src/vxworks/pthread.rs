@@ -15,12 +15,13 @@
 
 use crate::posix::*;
 
-pub unsafe fn pthread_rwlockattr_setkind_np(attr: *mut pthread_rwlockattr_t, pref: int) -> int {
-    unsafe { libc::pthread_rwlockattr_setkind_np(attr, pref) }
+pub unsafe fn pthread_rwlockattr_setkind_np(_attr: *mut pthread_rwlockattr_t, _pref: int) -> int {
+    // unsafe { libc::pthread_rwlockattr_setkind_np(attr, pref) }
+    todo!() // TODO this function is not used; shall we remove it
 }
 
 pub unsafe fn pthread_barrier_wait(barrier: *mut pthread_barrier_t) -> int {
-    unsafe { libc::pthread_barrier_wait(barrier) }
+    unsafe { internal::pthread_barrier_wait(barrier) }
 }
 
 pub unsafe fn pthread_barrier_init(
@@ -28,26 +29,26 @@ pub unsafe fn pthread_barrier_init(
     attr: *const pthread_barrierattr_t,
     count: uint,
 ) -> int {
-    unsafe { libc::pthread_barrier_init(barrier, attr, count) }
+    unsafe { internal::pthread_barrier_init(barrier, attr, count) }
 }
 
 pub unsafe fn pthread_barrier_destroy(barrier: *mut pthread_barrier_t) -> int {
-    unsafe { libc::pthread_barrier_destroy(barrier) }
+    unsafe { internal::pthread_barrier_destroy(barrier) }
 }
 
 pub unsafe fn pthread_barrierattr_destroy(attr: *mut pthread_barrierattr_t) -> int {
-    unsafe { libc::pthread_barrierattr_destroy(attr) }
+    unsafe { internal::pthread_barrierattr_destroy(attr) }
 }
 
 pub unsafe fn pthread_barrierattr_init(attr: *mut pthread_barrierattr_t) -> int {
-    unsafe { libc::pthread_barrierattr_init(attr) }
+    unsafe { internal::pthread_barrierattr_init(attr) }
 }
 
 pub unsafe fn pthread_barrierattr_setpshared(
     attr: *mut pthread_barrierattr_t,
     pshared: int,
 ) -> int {
-    unsafe { libc::pthread_barrierattr_setpshared(attr, pshared) }
+    unsafe { internal::pthread_barrierattr_setpshared(attr, pshared) }
 }
 
 pub unsafe fn pthread_attr_init(attr: *mut pthread_attr_t) -> int {
@@ -59,7 +60,7 @@ pub unsafe fn pthread_attr_destroy(attr: *mut pthread_attr_t) -> int {
 }
 
 pub unsafe fn pthread_attr_setguardsize(attr: *mut pthread_attr_t, guardsize: size_t) -> int {
-    unsafe { libc::pthread_attr_setguardsize(attr, guardsize) }
+    unsafe { internal::pthread_attr_setguardsize(attr, guardsize) }
 }
 
 pub unsafe fn pthread_attr_setinheritsched(attr: *mut pthread_attr_t, inheritsched: int) -> int {
@@ -74,7 +75,7 @@ pub unsafe fn pthread_attr_setschedparam(
     attr: *mut pthread_attr_t,
     param: *const sched_param,
 ) -> int {
-    unsafe { libc::pthread_attr_setschedparam(attr, param) }
+    unsafe { internal::pthread_attr_setschedparam(attr, param) }
 }
 
 pub unsafe fn pthread_attr_setstacksize(attr: *mut pthread_attr_t, stacksize: size_t) -> int {
@@ -82,15 +83,16 @@ pub unsafe fn pthread_attr_setstacksize(attr: *mut pthread_attr_t, stacksize: si
 }
 
 pub unsafe fn pthread_attr_setaffinity_np(
-    attr: *mut pthread_attr_t,
-    cpusetsize: size_t,
-    cpuset: *const cpu_set_t,
+    _attr: *mut pthread_attr_t,
+    _cpusetsize: size_t,
+    _cpuset: *const cpu_set_t,
 ) -> int {
-    unsafe {
-        let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
-
-        libc::pthread_attr_setaffinity_np(attr, cpusetsize, &cpuset)
-    }
+    // unsafe {
+    //     let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
+    //
+    //     libc::pthread_attr_setaffinity_np(attr, cpusetsize, &cpuset)
+    // }
+    todo!() // TODO this function is not used; shall we remove it
 }
 
 pub unsafe fn pthread_create(
@@ -111,15 +113,15 @@ pub unsafe fn pthread_self() -> pthread_t {
 }
 
 pub unsafe fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int {
-    unsafe { libc::pthread_setname_np(thread, name) }
+    unsafe { internal::pthread_setname_np(thread, name) }
 }
 
 pub unsafe fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int {
-    unsafe { libc::pthread_getname_np(thread, name, len) }
+    unsafe { internal::pthread_getname_np(thread, name, len) }
 }
 
 pub unsafe fn pthread_kill(thread: pthread_t, sig: int) -> int {
-    unsafe { libc::pthread_kill(thread, sig) }
+    unsafe { internal::pthread_kill(thread, sig) }
 }
 
 pub unsafe fn pthread_setaffinity_np(
@@ -130,7 +132,7 @@ pub unsafe fn pthread_setaffinity_np(
     unsafe {
         let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
 
-        libc::pthread_setaffinity_np(thread, cpusetsize, &cpuset)
+        internal::pthread_setaffinity_np(thread, cpusetsize, &cpuset as *const _ as *const _)
     }
 }
 
@@ -141,7 +143,11 @@ pub unsafe fn pthread_getaffinity_np(
 ) -> int {
     let mut native_cpuset = native_cpu_set_t::new_zeroed();
     unsafe {
-        let ret_val = libc::pthread_getaffinity_np(thread, cpusetsize, &mut native_cpuset);
+        let ret_val = internal::pthread_getaffinity_np(
+            thread,
+            cpusetsize,
+            &mut native_cpuset as *mut _ as *mut _,
+        );
 
         *cpuset = core::mem::transmute::<native_cpu_set_t, cpu_set_t>(native_cpuset);
 
@@ -158,7 +164,7 @@ pub unsafe fn pthread_rwlockattr_destroy(attr: *mut pthread_rwlockattr_t) -> int
 }
 
 pub unsafe fn pthread_rwlockattr_setpshared(attr: *mut pthread_rwlockattr_t, pshared: int) -> int {
-    unsafe { libc::pthread_rwlockattr_setpshared(attr, pshared) }
+    unsafe { internal::pthread_rwlockattr_setpshared(attr, pshared) }
 }
 
 pub unsafe fn pthread_rwlock_init(
@@ -223,7 +229,7 @@ pub unsafe fn pthread_mutex_unlock(mtx: *mut pthread_mutex_t) -> int {
 }
 
 pub unsafe fn pthread_mutex_consistent(mtx: *mut pthread_mutex_t) -> int {
-    unsafe { libc::pthread_mutex_consistent(mtx) }
+    unsafe { internal::pthread_mutex_consistent(mtx) }
 }
 
 pub unsafe fn pthread_mutexattr_init(attr: *mut pthread_mutexattr_t) -> int {
@@ -235,17 +241,92 @@ pub unsafe fn pthread_mutexattr_destroy(attr: *mut pthread_mutexattr_t) -> int {
 }
 
 pub unsafe fn pthread_mutexattr_setprotocol(attr: *mut pthread_mutexattr_t, protocol: int) -> int {
-    unsafe { libc::pthread_mutexattr_setprotocol(attr, protocol) }
+    unsafe { internal::pthread_mutexattr_setprotocol(attr, protocol) }
 }
 
 pub unsafe fn pthread_mutexattr_setpshared(attr: *mut pthread_mutexattr_t, pshared: int) -> int {
-    unsafe { libc::pthread_mutexattr_setpshared(attr, pshared) }
+    unsafe { internal::pthread_mutexattr_setpshared(attr, pshared) }
 }
 
 pub unsafe fn pthread_mutexattr_setrobust(attr: *mut pthread_mutexattr_t, robustness: int) -> int {
-    unsafe { libc::pthread_mutexattr_setrobust(attr, robustness) }
+    unsafe { internal::pthread_mutexattr_setrobust(attr, robustness) }
 }
 
 pub unsafe fn pthread_mutexattr_settype(attr: *mut pthread_mutexattr_t, mtype: int) -> int {
     unsafe { libc::pthread_mutexattr_settype(attr, mtype) }
+}
+
+mod internal {
+    use super::*;
+
+    unsafe extern "C" {
+        pub(super) fn pthread_barrier_wait(barrier: *mut pthread_barrier_t) -> int;
+
+        pub(super) fn pthread_barrier_init(
+            barrier: *mut pthread_barrier_t,
+            attr: *const pthread_barrierattr_t,
+            count: uint,
+        ) -> int;
+
+        pub(super) fn pthread_barrier_destroy(barrier: *mut pthread_barrier_t) -> int;
+
+        pub(super) fn pthread_barrierattr_destroy(attr: *mut pthread_barrierattr_t) -> int;
+
+        pub(super) fn pthread_barrierattr_init(attr: *mut pthread_barrierattr_t) -> int;
+
+        pub(super) fn pthread_barrierattr_setpshared(
+            attr: *mut pthread_barrierattr_t,
+            pshared: int,
+        ) -> int;
+
+        pub(super) fn pthread_attr_setguardsize(
+            attr: *mut pthread_attr_t,
+            guardsize: size_t,
+        ) -> int;
+
+        pub(super) fn pthread_attr_setschedparam(
+            attr: *mut pthread_attr_t,
+            param: *const sched_param,
+        ) -> int;
+
+        pub(super) fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int;
+
+        pub(super) fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int;
+
+        pub(super) fn pthread_kill(thread: pthread_t, sig: int) -> int;
+
+        pub(super) fn pthread_setaffinity_np(
+            thread: pthread_t,
+            cpusetsize: size_t,
+            cpuset: *const cpu_set_t,
+        ) -> int;
+
+        pub(super) fn pthread_getaffinity_np(
+            thread: pthread_t,
+            cpusetsize: size_t,
+            cpuset: *mut cpu_set_t,
+        ) -> int;
+
+        pub(super) fn pthread_rwlockattr_setpshared(
+            attr: *mut pthread_rwlockattr_t,
+            pshared: int,
+        ) -> int;
+
+        pub(super) fn pthread_mutex_consistent(mtx: *mut pthread_mutex_t) -> int;
+
+        pub(super) fn pthread_mutexattr_setprotocol(
+            attr: *mut pthread_mutexattr_t,
+            protocol: int,
+        ) -> int;
+
+        pub(super) fn pthread_mutexattr_setpshared(
+            attr: *mut pthread_mutexattr_t,
+            pshared: int,
+        ) -> int;
+
+        pub(super) fn pthread_mutexattr_setrobust(
+            attr: *mut pthread_mutexattr_t,
+            robustness: int,
+        ) -> int;
+    }
 }

@@ -34,7 +34,6 @@ pub type c_char = core::ffi::c_char;
 pub type clockid_t = libc::clockid_t;
 pub type dev_t = libc::dev_t;
 pub type gid_t = libc::gid_t;
-pub type itimerspec = libc::itimerspec;
 pub type ino_t = libc::ino_t;
 pub type int = core::ffi::c_int;
 pub type in_port_t = u16;
@@ -48,7 +47,6 @@ pub type rlim_t = libc::rlim_t;
 pub type __rlim_t = libc::rlim_t;
 pub type sa_family_t = libc::sa_family_t;
 pub type short = core::ffi::c_short;
-pub type sigevent = libc::sigevent;
 pub type sighandler_t = size_t;
 pub type siginfo_t = libc::siginfo_t;
 pub type size_t = usize;
@@ -56,30 +54,58 @@ pub type socklen_t = libc::socklen_t;
 pub type ssize_t = isize;
 pub type suseconds_t = libc::suseconds_t;
 pub type time_t = libc::time_t;
-pub type timer_t = libc::timer_t;
+pub type timer_t = *const core::ffi::c_void;
 pub type uchar = core::ffi::c_uchar;
 pub type uid_t = libc::uid_t;
 pub type uint = libc::c_uint;
 pub type ushort = libc::c_ushort;
 pub type void = core::ffi::c_void;
 
-pub(crate) type native_cpu_set_t = libc::cpu_set_t;
+pub(crate) type native_cpu_set_t = libc::cpuset_t;
 impl MemZeroedStruct for native_cpu_set_t {}
 
 pub type sigset_t = libc::sigset_t;
-impl MemZeroedStruct for sigset_t {}
+// TODO it seems pthread_t and sigset_t are just a typedef to u64 which leads to errors implementing 'Struct';
+//      since sigset_t is not used, it could just as well be removed
+// impl MemZeroedStruct for sigset_t {}
 
-pub type pthread_barrier_t = libc::pthread_barrier_t;
+const _PTHREAD_SHARED_SEM_NAME_MAX: usize = 30;
+
+#[repr(C)]
+struct _Vx_semaphore {
+    _dummy: u64,
+}
+
+type SEM_ID = *mut _Vx_semaphore;
+
+#[repr(C)]
+pub struct pthread_barrier_t {
+    serialization_grab: uint,
+    user_count: uint,
+    session_count: uint,
+    barrier_valid: int,
+    barrier_attr: pthread_barrierattr_t,
+    barrier_mutex: SEM_ID,
+    barrier_sem: SEM_ID,
+    barrier_mutex_name: [c_char; _PTHREAD_SHARED_SEM_NAME_MAX],
+    barrier_semaphore_name: [c_char; _PTHREAD_SHARED_SEM_NAME_MAX],
+}
 impl MemZeroedStruct for pthread_barrier_t {}
 
-pub type pthread_barrierattr_t = libc::pthread_barrierattr_t;
+#[repr(C)]
+pub struct pthread_barrierattr_t {
+    status: int,
+    pshared: int,
+}
 impl MemZeroedStruct for pthread_barrierattr_t {}
 
 pub type pthread_attr_t = libc::pthread_attr_t;
 impl MemZeroedStruct for pthread_attr_t {}
 
 pub type pthread_t = libc::pthread_t;
-impl MemZeroedStruct for pthread_t {}
+
+#[cfg(target_pointer_width = "64")]
+impl MemZeroedStruct for pthread_t {} // NOTE: on 32 bit, pthread_t is a typedef to the same type as native_cpu_set_t aka libc::cpuset_t;
 
 pub type pthread_rwlockattr_t = libc::pthread_rwlockattr_t;
 impl MemZeroedStruct for pthread_rwlockattr_t {}
@@ -93,10 +119,27 @@ impl MemZeroedStruct for pthread_mutex_t {}
 pub type pthread_mutexattr_t = libc::pthread_mutexattr_t;
 impl MemZeroedStruct for pthread_mutexattr_t {}
 
-pub type sem_t = libc::sem_t;
+// according to vxsdk/sysroot/usr/h/public/semaphore.h, the original sem_t
+// structure was 8 bytes and it needs to stay the same for backward compatibility;
+// the actual sem_t is a mess of structs and unions;
+// this should be safe since we do not access the fields directly but
+// the alignment might need to be 8 -> TODO test the alignment with a C library
+// that returns size and alignment of sem_t
+#[repr(C, align(4))]
+pub struct sem_t {
+    _dummy: [u8; 8],
+}
 impl MemZeroedStruct for sem_t {}
 
-pub type flock = libc::flock;
+#[repr(C)]
+pub struct flock {
+    pub l_type: short,
+    pub l_whence: short,
+    pub l_start: off_t,
+    pub l_len: off_t,
+    pub l_pid: pid_t,
+}
+
 impl MemZeroedStruct for flock {}
 
 pub type rlimit = libc::rlimit;
@@ -135,9 +178,9 @@ impl From<native_stat_t> for stat_t {
             st_gid: value.st_gid,
             st_rdev: value.st_rdev,
             st_size: value.st_size,
-            st_atime: value.st_atime,
-            st_mtime: value.st_mtime,
-            st_ctime: value.st_ctime,
+            st_atime: value.st_atim.tv_sec,
+            st_mtime: value.st_mtim.tv_sec,
+            st_ctime: value.st_ctim.tv_sec,
             st_blksize: value.st_blksize,
             st_blocks: value.st_blocks,
         }
@@ -148,10 +191,51 @@ impl MemZeroedStruct for stat_t {}
 pub type timespec = libc::timespec;
 impl MemZeroedStruct for timespec {}
 
+// defined in h/public/timerLib.h
+#[repr(C)]
+pub struct itimerspec {
+    pub it_interval: timespec,
+    pub it_value: timespec,
+}
+impl MemZeroedStruct for itimerspec {}
+
 pub type timeval = libc::timeval;
 impl MemZeroedStruct for timeval {}
 
-pub type fd_set = libc::fd_set;
+// defined in h/public/base/b_union_sigval.h
+#[repr(C)]
+pub union sigval {
+    pub sigval_int: int,
+    pub sival_ptr: *mut void,
+}
+impl MemZeroedStruct for sigval {}
+
+// defined in h/public/sigeventCommon.h
+#[repr(C)]
+pub struct sigevent {
+    pub sigev_notify: int,
+    pub sigev_signo: int,
+    pub sigev_value: sigval,
+    pub sigev_notify_function: Option<extern "C" fn(sigval)>,
+    pub sigev_notify_attributes: *mut pthread_attr_t,
+    pub sigev_notifier_id: *mut void,
+    pub sigev_id: *mut void,
+}
+impl MemZeroedStruct for sigevent {}
+
+// this is more messy than sem_t since `FD_SETSIZE` can be set by the user;
+// it seems by default `FD_SETSIZE` is set to `2048`;
+// TODO this needs thorough testing
+type fd_mask = long;
+const FD_SETSIZE: usize = 2048;
+const BITS_PER_BYTE: usize = 8;
+const BITS_PER_FD_MASK: usize = core::mem::size_of::<fd_mask>() * BITS_PER_BYTE;
+const NUMBER_OF_FD_MASK_BLOCKS: usize = FD_SETSIZE.div_ceil(BITS_PER_FD_MASK);
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct fd_set {
+    fds_bits: [fd_mask; NUMBER_OF_FD_MASK_BLOCKS],
+}
 impl MemZeroedStruct for fd_set {}
 
 pub type dirent = libc::dirent;
@@ -198,8 +282,25 @@ impl SockAddrIn for sockaddr_in {
     }
 }
 
-pub type passwd = libc::passwd;
+#[repr(C)]
+pub struct passwd {
+    pub pw_name: *mut c_char,
+    pub pw_uid: uid_t,
+    pub pw_gid: gid_t,
+    pub pw_dir: *mut c_char,
+    pub pw_shell: *mut c_char,
+}
+
+// pub type passwd = libc::passwd;
 impl MemZeroedStruct for passwd {}
 
-pub type group = libc::group;
+#[repr(C)]
+pub struct group {
+    pub gr_name: *mut c_char,
+    pub gr_passwd: *mut c_char,
+    pub gr_gid: int,
+    pub gr_mem: *mut *mut c_char,
+}
+
+// pub type group = libc::group;
 impl MemZeroedStruct for group {}

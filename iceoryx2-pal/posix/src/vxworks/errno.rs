@@ -19,6 +19,8 @@ use core::{ffi::CStr, fmt::Display};
 
 use alloc::string::ToString;
 
+// TODO is it safe to remove some values? Probably yes, since it sets them to the constants from libc
+
 ErrnoEnumGenerator!(
   assign
     ESUCCES = 0;
@@ -96,7 +98,7 @@ ErrnoEnumGenerator!(
     EILSEQ,
     // ERESTART,
     // ESTRPIPE,
-    EUSERS,
+    // EUSERS,
     ENOTSOCK,
     EDESTADDRREQ,
     EMSGSIZE,
@@ -142,15 +144,15 @@ ErrnoEnumGenerator!(
 
 impl Errno {
     pub fn get() -> Errno {
-        unsafe { *libc::__errno_location() }.into()
+        unsafe { libc::errnoGet() }.into()
     }
 
     pub fn set(value: Errno) {
-        unsafe { *libc::__errno_location() = value as i32 };
+        unsafe { libc::errnoSet(value as i32) };
     }
 
     pub fn reset() {
-        unsafe { *libc::__errno_location() = 0 };
+        unsafe { libc::errnoSet(0) };
     }
 }
 

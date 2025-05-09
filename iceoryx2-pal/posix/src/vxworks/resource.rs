@@ -16,9 +16,19 @@
 use crate::posix::types::*;
 
 pub unsafe fn getrlimit(resource: int, rlim: *mut rlimit) -> int {
-    unsafe { libc::getrlimit(resource as _, rlim) }
+    unsafe { internal::getprlimit(0, 0, resource as _, rlim) }
 }
 
 pub unsafe fn setrlimit(resource: int, rlim: *const rlimit) -> int {
-    unsafe { libc::setrlimit(resource as _, rlim) }
+    unsafe { internal::setprlimit(0, 0, resource as _, rlim) }
+}
+
+mod internal {
+    use super::*;
+
+    unsafe extern "C" {
+        pub(super) fn getprlimit(idtype: int, id: int, resource: int, rlim: *mut rlimit) -> int;
+
+        pub(super) fn setprlimit(idtype: int, id: int, resource: int, rlim: *const rlimit) -> int;
+    }
 }
