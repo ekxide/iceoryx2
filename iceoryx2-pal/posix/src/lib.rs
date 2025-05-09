@@ -69,6 +69,11 @@ pub mod os;
 mod os;
 
 #[cfg(not(platform_override))]
+#[cfg(target_os = "vxworks")]
+#[path = "vxworks/os.rs"]
+mod os;
+
+#[cfg(not(platform_override))]
 #[cfg(target_os = "windows")]
 #[path = "windows/os.rs"]
 mod os;
