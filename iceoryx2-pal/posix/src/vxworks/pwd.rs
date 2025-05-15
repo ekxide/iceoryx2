@@ -14,67 +14,209 @@
 #![allow(clippy::missing_safety_doc)]
 use crate::posix::types::*;
 
+use core::ffi::CStr;
+use std::sync::Mutex;
+
+use super::Errno;
+
 pub unsafe fn getpwnam_r(
-    name: *const c_char,
-    pwd: *mut passwd,
-    buf: *mut c_char,
-    buflen: size_t,
-    result: *mut *mut passwd,
+    _name: *const c_char,
+    _pwd: *mut passwd,
+    _buf: *mut c_char,
+    _buflen: size_t,
+    _result: *mut *mut passwd,
 ) -> int {
-    internal::getpwnam_r(name, pwd, buf, buflen, result)
+    // NOTE getpwnam_r return ENOSYS and reimplementing it with getpwnam does also not work since it also returns ENOSYS;
+    //      on ARM the the function does not even exist and there is a linker error
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn getpwuid_r(
-    uid: uid_t,
-    pwd: *mut passwd,
-    buf: *mut c_char,
-    buflen: size_t,
-    result: *mut *mut passwd,
+    _uid: uid_t,
+    _pwd: *mut passwd,
+    _buf: *mut c_char,
+    _buflen: size_t,
+    _result: *mut *mut passwd,
 ) -> int {
-    internal::getpwuid_r(uid, pwd, buf, buflen, result)
+    // NOTE getpwuid_r return ENOSYS and reimplementing it with getpwuid does also not work since it also returns ENOSYS;
+    //      on ARM the the function does not even exist and there is a linker error
+    Errno::set(Errno::ENOSYS);
+    -1
 }
+
+struct GetGrWorkaround {}
+
+impl GetGrWorkaround {
+    unsafe fn getgrnam_r(
+        &self,
+        name: *const c_char,
+        grp: *mut group,
+        buf: *mut c_char,
+        buflen: size_t,
+        result: *mut *mut group,
+    ) -> int {
+        unsafe {
+            *result = core::ptr::null_mut();
+            Errno::set(Errno::ESUCCES);
+            // NOTE: getgrnam() Thread safety: MT-Unsafe race:grnam locale
+            let src_grp = internal::getgrnam(name);
+            if src_grp.is_null() {
+                return Errno::get() as _;
+            }
+
+            let copy_result = Self::copy_group_struct(&*src_grp, &mut *grp, buf, buflen);
+
+            if copy_result != 0 {
+                return copy_result;
+            }
+
+            // Set the result pointer
+            *result = grp;
+
+            0
+        }
+    }
+
+    pub unsafe fn getgrgid_r(
+        &self,
+        gid: gid_t,
+        grp: *mut group,
+        buf: *mut c_char,
+        buflen: size_t,
+        result: *mut *mut group,
+    ) -> int {
+        unsafe {
+            *result = core::ptr::null_mut();
+            Errno::set(Errno::ESUCCES);
+            // NOTE: getgrgid() Thread safety: MT-Unsafe race:grgid locale
+            let src_grp = internal::getgrgid(gid);
+            if src_grp.is_null() {
+                return Errno::get() as _;
+            }
+
+            let copy_result = Self::copy_group_struct(&*src_grp, &mut *grp, buf, buflen);
+
+            if copy_result != 0 {
+                return copy_result;
+            }
+
+            // Set the result pointer
+            *result = grp;
+
+            0
+        }
+    }
+
+    unsafe fn copy_group_struct(
+        src: &group,
+        dst: &mut group,
+        buf: *mut c_char,
+        buflen: size_t,
+    ) -> int {
+        let gr_name = core::ffi::CStr::from_ptr(src.gr_name);
+        let gr_passwd = core::ffi::CStr::from_ptr(src.gr_passwd);
+        let gr_mem = src.gr_mem;
+
+        let mut required_buf_len = gr_name.to_bytes_with_nul().len();
+        required_buf_len += gr_passwd.to_bytes_with_nul().len();
+
+        let mut member = gr_mem;
+        let mut member_count = 0;
+        while !member.is_null() && !(*member).is_null() {
+            let member_str = CStr::from_ptr(*member);
+            required_buf_len += member_str.to_bytes_with_nul().len();
+            member = member.add(1);
+            member_count += 1;
+        }
+
+        const NULL_TERMINATION: usize = 1;
+        required_buf_len += (member_count + NULL_TERMINATION) * core::mem::size_of::<*mut c_char>()
+            + (core::mem::align_of::<*mut c_char>() - 1);
+
+        if required_buf_len > buflen {
+            return Errno::ERANGE as _;
+        }
+
+        dst.gr_gid = src.gr_gid;
+
+        // get memory for group member pointer array
+        let mut buf = buf.add(buf.align_offset(core::mem::align_of::<*mut c_char>()));
+        dst.gr_mem = buf as *mut *mut _;
+        buf = buf.add((member_count + NULL_TERMINATION) * core::mem::size_of::<*mut c_char>());
+
+        // copy group name
+        core::ptr::copy_nonoverlapping(gr_name.as_ptr(), buf, gr_name.to_bytes_with_nul().len());
+        dst.gr_name = buf;
+        buf = buf.add(gr_name.to_bytes_with_nul().len());
+
+        // copy group passwd
+        core::ptr::copy_nonoverlapping(
+            gr_passwd.as_ptr(),
+            buf,
+            gr_passwd.to_bytes_with_nul().len(),
+        );
+        dst.gr_passwd = buf;
+        buf = buf.add(gr_passwd.to_bytes_with_nul().len());
+
+        // copy group members
+        let mut member = gr_mem;
+        let mut member_index = 0;
+        while !member.is_null() && !(*member).is_null() {
+            let member_str = CStr::from_ptr(*member);
+            core::ptr::copy_nonoverlapping(
+                member_str.as_ptr(),
+                buf,
+                member_str.to_bytes_with_nul().len(),
+            );
+            dst.gr_mem.add(member_index).write(buf);
+            buf = buf.add(member_str.to_bytes_with_nul().len());
+
+            member_index += 1;
+            member = member.add(1);
+        }
+
+        // write null termination to group member pointer array
+        dst.gr_mem.add(member_index).write(core::ptr::null_mut());
+
+        0
+    }
+}
+
+static GETGR_MUTEX: Mutex<GetGrWorkaround> = Mutex::new(GetGrWorkaround {});
 
 pub unsafe fn getgrnam_r(
-    _name: *const c_char,
-    _grp: *mut group,
-    _buf: *mut c_char,
-    _buflen: size_t,
-    _result: *mut *mut group,
+    name: *const c_char,
+    grp: *mut group,
+    buf: *mut c_char,
+    buflen: size_t,
+    result: *mut *mut group,
 ) -> int {
-    // libc::getgrnam_r(name, grp, buf, buflen, result)
-    todo!() // FIXME HIGH PRIO getgrnam_r is not available; can getgrnam be made thread-safe
+    GETGR_MUTEX
+        .lock()
+        .unwrap()
+        .getgrnam_r(name, grp, buf, buflen, result)
 }
 
-// TODO: check if only multiple calls to getgrgid are not thread safe and if a local mutex could help
 pub unsafe fn getgrgid_r(
-    _gid: gid_t,
-    _grp: *mut group,
-    _buf: *mut c_char,
-    _buflen: size_t,
-    _result: *mut *mut group,
+    gid: gid_t,
+    grp: *mut group,
+    buf: *mut c_char,
+    buflen: size_t,
+    result: *mut *mut group,
 ) -> int {
-    // libc::getgrgid_r(gid, grp, buf, buflen, result)
-    todo!() // FIXME HIGH PRIO getgrgid_r is not available; can getgrgid be made thread-safe
+    GETGR_MUTEX
+        .lock()
+        .unwrap()
+        .getgrgid_r(gid, grp, buf, buflen, result)
 }
 
 mod internal {
     use super::*;
 
     extern "C" {
-        pub(super) fn getpwnam_r(
-            name: *const c_char,
-            pwd: *mut passwd,
-            buf: *mut c_char,
-            buflen: size_t,
-            result: *mut *mut passwd,
-        ) -> int;
+        pub(super) fn getgrnam(name: *const c_char) -> *mut group;
 
-        pub(super) fn getpwuid_r(
-            uid: uid_t,
-            pwd: *mut passwd,
-            buf: *mut c_char,
-            buflen: size_t,
-            result: *mut *mut passwd,
-        ) -> int;
+        pub(super) fn getgrgid(gid: gid_t) -> *mut group;
     }
 }
