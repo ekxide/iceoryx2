@@ -14,6 +14,8 @@
 #![allow(clippy::missing_safety_doc)]
 use crate::posix::types::*;
 
+use std::sync::Mutex;
+
 pub unsafe fn getpwnam_r(
     name: *const c_char,
     pwd: *mut passwd,
@@ -21,6 +23,7 @@ pub unsafe fn getpwnam_r(
     buflen: size_t,
     result: *mut *mut passwd,
 ) -> int {
+    // NOTE getpwnam_r return ENOSYS and reimplementing it with getpwnam does also not work since it also returns ENOSYS
     internal::getpwnam_r(name, pwd, buf, buflen, result)
 }
 
@@ -31,30 +34,92 @@ pub unsafe fn getpwuid_r(
     buflen: size_t,
     result: *mut *mut passwd,
 ) -> int {
+    // NOTE getpwuid_r return ENOSYS and reimplementing it with getpwuid does also not work since it also returns ENOSYS
     internal::getpwuid_r(uid, pwd, buf, buflen, result)
 }
 
-pub unsafe fn getgrnam_r(
-    _name: *const c_char,
-    _grp: *mut group,
-    _buf: *mut c_char,
-    _buflen: size_t,
-    _result: *mut *mut group,
-) -> int {
-    // libc::getgrnam_r(name, grp, buf, buflen, result)
-    todo!() // FIXME HIGH PRIO getgrnam_r is not available; can getgrnam be made thread-safe
+struct GetGrWorkaround {}
+
+impl GetGrWorkaround {
+    unsafe fn getgrnam_r(
+        &self,
+        name: *const c_char,
+        grp: *mut group,
+        _buf: *mut c_char,
+        _buflen: size_t,
+        result: *mut *mut group,
+    ) -> int {
+        // FIXME: this is broken and we must copy the data from from the returned group into the provided buffer
+        unsafe {
+            // NOTE: getgrnam() Thread safety: MT-Unsafe race:grnam locale
+            let gr = internal::getgrnam(name);
+            if gr.is_null() {
+                return -1;
+            }
+
+            // Copy the group struct and buffer
+            core::ptr::copy_nonoverlapping(gr, grp, 1);
+
+            // Set the result pointer
+            *result = grp;
+
+            0
+        }
+    }
+
+    pub unsafe fn getgrgid_r(
+        &self,
+        gid: gid_t,
+        grp: *mut group,
+        _buf: *mut c_char,
+        _buflen: size_t,
+        result: *mut *mut group,
+    ) -> int {
+        // FIXME: this is broke and we must copy the data from from the returned group into the provided buffer
+        unsafe {
+            // NOTE: getgrgid() Thread safety: MT-Unsafe race:grgid locale
+            let gr = internal::getgrgid(gid);
+            if gr.is_null() {
+                return -1;
+            }
+
+            // Copy the group struct and buffer
+            core::ptr::copy_nonoverlapping(gr, grp, 1);
+
+            // Set the result pointer
+            *result = grp;
+
+            0
+        }
+    }
 }
 
-// TODO: check if only multiple calls to getgrgid are not thread safe and if a local mutex could help
-pub unsafe fn getgrgid_r(
-    _gid: gid_t,
-    _grp: *mut group,
-    _buf: *mut c_char,
-    _buflen: size_t,
-    _result: *mut *mut group,
+static GETGR_MUTEX: Mutex<GetGrWorkaround> = Mutex::new(GetGrWorkaround {});
+
+pub unsafe fn getgrnam_r(
+    name: *const c_char,
+    grp: *mut group,
+    buf: *mut c_char,
+    buflen: size_t,
+    result: *mut *mut group,
 ) -> int {
-    // libc::getgrgid_r(gid, grp, buf, buflen, result)
-    todo!() // FIXME HIGH PRIO getgrgid_r is not available; can getgrgid be made thread-safe
+    GETGR_MUTEX
+        .lock()
+        .unwrap()
+        .getgrnam_r(name, grp, buf, buflen, result)
+}
+
+pub unsafe fn getgrgid_r(
+    gid: gid_t,
+    grp: *mut group,
+    buf: *mut c_char,
+    buflen: size_t,
+    result: *mut *mut group,
+) -> int {
+    GETGR_MUTEX
+        .lock()
+        .unwrap()
+        .getgrgid_r(gid, grp, buf, buflen, result)
 }
 
 mod internal {
@@ -76,5 +141,9 @@ mod internal {
             buflen: size_t,
             result: *mut *mut passwd,
         ) -> int;
+
+        pub(super) fn getgrnam(name: *const c_char) -> *mut group;
+
+        pub(super) fn getgrgid(gid: gid_t) -> *mut group;
     }
 }
