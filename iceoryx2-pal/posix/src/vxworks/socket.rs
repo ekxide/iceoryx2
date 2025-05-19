@@ -13,15 +13,20 @@
 #![allow(non_camel_case_types)]
 #![allow(clippy::missing_safety_doc)]
 
+use crate::posix::errno::*;
 use crate::posix::types::*;
 
 pub unsafe fn socketpair(
-    domain: int,
-    socket_type: int,
-    protocol: int,
-    socket_vector: *mut int, // actually it shall be [int; 2] // TODO adjust the API to pass a '&mut [int; 2]'
+    _domain: int,
+    _socket_type: int,
+    _protocol: int,
+    _socket_vector: *mut int, // actually it shall be [int; 2] // TODO adjust the API to pass a '&mut [int; 2]'
 ) -> int {
-    internal::ipcom_socketpair(domain, socket_type, protocol, socket_vector)
+    // NOTE: theoretically ipcom_socketpair is available on VxWorks but there is a linker error when used;
+    // we return an error and set the errno to indicate feature is not supported; not needed for IPC anyway
+    // internal::ipcom_socketpair(domain, socket_type, protocol, socket_vector)
+    Errno::set(Errno::ENOTSUP);
+    -1
 }
 
 pub unsafe fn setsockopt(
@@ -101,7 +106,7 @@ mod internal {
     use super::*;
 
     extern "C" {
-        pub(super) fn ipcom_socketpair(
+        pub(super) fn _ipcom_socketpair(
             domain: int,
             socket_type: int,
             protocol: int,
