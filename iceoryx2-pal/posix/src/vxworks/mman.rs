@@ -13,7 +13,14 @@
 #![allow(non_camel_case_types)]
 #![allow(clippy::missing_safety_doc)]
 
-use crate::posix::{closedir, opendir, readdir, types::*};
+use iceoryx2_pal_configuration::PATH_SEPARATOR;
+
+use crate::posix::*;
+
+use super::{
+    open_with_mode,
+    settings::{MAX_PATH_LENGTH, SHM_STATE_DIRECTORY, SHM_STATE_SUFFIX},
+};
 
 pub unsafe fn mlock(addr: *const void, len: size_t) -> int {
     libc::mlock(addr, len)
@@ -31,49 +38,95 @@ pub unsafe fn munlockall() -> int {
     libc::munlockall()
 }
 
+unsafe fn remove_leading_path_separator(value: *const c_char) -> *const c_char {
+    if *value as u8 == PATH_SEPARATOR {
+        value.add(1)
+    } else {
+        value
+    }
+}
+
+unsafe fn shm_file_path(name: *const c_char, suffix: &[u8]) -> [u8; MAX_PATH_LENGTH] {
+    let name = remove_leading_path_separator(name);
+
+    let mut state_file_path = [0u8; MAX_PATH_LENGTH];
+
+    // path
+    state_file_path[..SHM_STATE_DIRECTORY.len()].copy_from_slice(SHM_STATE_DIRECTORY);
+
+    // name
+    let mut name_len = 0;
+    for i in 0..usize::MAX {
+        let c = *(name.add(i) as *const u8);
+
+        state_file_path[i + SHM_STATE_DIRECTORY.len()] = if c == b'/' { b'\\' } else { c };
+        if *(name.add(i)) == 0i8 {
+            name_len = i;
+            break;
+        }
+    }
+
+    // suffix
+    let start_index = SHM_STATE_DIRECTORY.len() + name_len;
+    state_file_path[start_index..start_index + suffix.len()].copy_from_slice(suffix);
+
+    state_file_path
+}
+
+unsafe fn create_shm_state_file(name: *const c_char) -> bool {
+    let shm_file_path = shm_file_path(name, SHM_STATE_SUFFIX);
+    let shm_state_fd = open_with_mode(
+        shm_file_path.as_ptr().cast(),
+        O_EXCL | O_CREAT | O_RDWR,
+        S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH,
+    );
+
+    if shm_state_fd == -1 {
+        return false;
+    }
+
+    close(shm_state_fd);
+    true
+}
+
+unsafe fn does_shm_exist(name: *const c_char) -> bool {
+    let shm_file_path = shm_file_path(name, SHM_STATE_SUFFIX);
+    access(shm_file_path.as_ptr().cast(), F_OK) == 0
+}
+
 pub unsafe fn shm_open(name: *const c_char, oflag: int, mode: mode_t) -> int {
-    libc::shm_open(name, oflag, mode)
+    let shm_exists = does_shm_exist(name);
+    if oflag & O_EXCL != 0 && shm_exists {
+        Errno::set(Errno::EEXIST);
+        return -1;
+    }
+
+    if !shm_exists {
+        if oflag & O_CREAT == 0 {
+            Errno::set(Errno::ENOENT);
+            return -1;
+        }
+
+        if !create_shm_state_file(name) {
+            return -1;
+        }
+    }
+
+    // TODO: creating the shared memory without all permission set for the owner bit fails; check if this is an issue
+    libc::shm_open(name, oflag, mode | 0o0700)
 }
 
 pub unsafe fn shm_unlink(name: *const c_char) -> int {
-    libc::shm_unlink(name)
-}
-
-pub unsafe fn shm_list() -> Vec<[i8; 256]> {
-    let mut result = vec![];
-    let dir = opendir("/dev/shm/\0".as_ptr().cast());
-    if dir.is_null() {
-        return result;
+    if does_shm_exist(name) {
+        let ret_val = libc::shm_unlink(name.cast());
+        if ret_val == 0 || (ret_val == -1 && Errno::get() == Errno::ENOENT) {
+            remove(shm_file_path(name, SHM_STATE_SUFFIX).as_ptr().cast());
+        }
+        return ret_val;
     }
 
-    loop {
-        let entry = readdir(dir);
-        if entry.is_null() {
-            break;
-        }
-        let mut temp = [0i8; 256];
-        for (i, c) in temp.iter_mut().enumerate() {
-            *c = (*entry).d_name[i] as _;
-            if (*entry).d_name[i] == 0 {
-                break;
-            }
-        }
-
-        // skip empty names
-        if temp[0] == 0 ||
-        // skip dot (for current dir)
-        temp[0] as u8 == b'.' && temp[1] == 0 ||
-        // skip  dot dot (for parent dir)
-        temp[0] as u8 == b'.' && temp[1] as u8 == b'.' && temp[2] == 0
-        {
-            continue;
-        }
-
-        result.push(temp);
-    }
-    closedir(dir);
-
-    result
+    Errno::set(Errno::ENOENT);
+    -1
 }
 
 pub unsafe fn mmap(
@@ -93,4 +146,50 @@ pub unsafe fn munmap(addr: *mut void, len: size_t) -> int {
 
 pub unsafe fn mprotect(addr: *mut void, len: size_t, prot: int) -> int {
     libc::mprotect(addr, len, prot)
+}
+
+unsafe fn trim_ascii(value: &[i8]) -> &[u8] {
+    let length = value.iter().position(|&c| c == 0).unwrap_or(value.len());
+    core::slice::from_raw_parts(value.as_ptr().cast(), length)
+}
+
+pub unsafe fn shm_list() -> Vec<[i8; 256]> {
+    let mut result = vec![];
+    let mut search_path = SHM_STATE_DIRECTORY.to_vec();
+    search_path.push(0);
+    let dir = opendir(search_path.as_ptr().cast());
+
+    if dir.is_null() {
+        return result;
+    }
+
+    loop {
+        let entry = libc::readdir(dir);
+        if entry.is_null() {
+            break;
+        }
+
+        if (*entry).d_type == DT_REG as _ {
+            let file_name = trim_ascii(&(*entry).d_name);
+            if file_name.ends_with(SHM_STATE_SUFFIX) {
+                let mut shm_name = [0i8; 256];
+                for (i, letter) in shm_name
+                    .iter_mut()
+                    .enumerate()
+                    .take(file_name.len() - SHM_STATE_SUFFIX.len())
+                {
+                    if (*entry).d_name[i] == 0 {
+                        break;
+                    }
+
+                    *letter = (*entry).d_name[i];
+                }
+
+                result.push(shm_name);
+            }
+        }
+    }
+
+    closedir(dir);
+    result
 }

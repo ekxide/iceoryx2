@@ -38,6 +38,8 @@ pub const O_APPEND: int = libc::O_APPEND as _;
 pub const O_NONBLOCK: int = libc::O_NONBLOCK as _;
 pub const O_DIRECTORY: int = -1; // NOTE: not available; TODO use Option<int> to make this visible
 
+pub const DT_REG: int = 0x8; // from vxsdk/sysroot/usr/h/public/dirent.h
+
 pub const F_RDLCK: int = 1; // from vxsdk/sysroot/usr/h/public/sys/fcntlcom.h
 pub const F_WRLCK: int = 2; // from vxsdk/sysroot/usr/h/public/sys/fcntlcom.h
 pub const F_UNLCK: int = 3; // from vxsdk/sysroot/usr/h/public/sys/fcntlcom.h
