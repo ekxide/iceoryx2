@@ -13,68 +13,114 @@
 #![allow(non_camel_case_types)]
 #![allow(clippy::missing_safety_doc)]
 
-use crate::posix::types::*;
+use iceoryx2_pal_concurrency_sync::strategy::semaphore::Semaphore;
+use iceoryx2_pal_concurrency_sync::{WaitAction, WaitResult};
 
-pub unsafe fn sem_create(name: *const c_char, oflag: int, mode: mode_t, value: uint) -> *mut sem_t {
-    unsafe { internal::sem_open(name, oflag, mode, value) }
+use crate::posix::*;
+
+pub unsafe fn sem_create(
+    _name: *const c_char,
+    _oflag: int,
+    _mode: mode_t,
+    _value: uint,
+) -> *mut sem_t {
+    SEM_FAILED
 }
 
 pub unsafe fn sem_post(sem: *mut sem_t) -> int {
-    unsafe { internal::sem_post(sem) }
+    let sem: &mut _ = unsafe { &mut *sem };
+    if sem.semaphore.value() == u32::MAX as u64 {
+        Errno::set(Errno::EOVERFLOW);
+        return -1;
+    }
+
+    sem.semaphore.post(|_| {}, 1);
+
+    Errno::set(Errno::ESUCCES);
+    0
 }
 
 pub unsafe fn sem_wait(sem: *mut sem_t) -> int {
-    unsafe { internal::sem_wait(sem) }
+    let sem: &mut _ = unsafe { &mut *sem };
+    sem.semaphore.wait(|_atomic, _value| -> WaitAction {
+        let mut current_time = timespec::new_zeroed();
+        current_time.tv_sec = 0;
+        current_time.tv_nsec = 1000000;
+
+        unsafe {
+            libc::nanosleep(&current_time, core::ptr::null_mut());
+        }
+        WaitAction::Continue
+    });
+
+    Errno::set(Errno::ESUCCES);
+    0
 }
 
 pub unsafe fn sem_trywait(sem: *mut sem_t) -> int {
-    unsafe { internal::sem_trywait(sem) }
+    let sem: &mut _ = unsafe { &mut *sem };
+    match sem.semaphore.try_wait() {
+        WaitResult::Success => {
+            Errno::set(Errno::ESUCCES);
+            0
+        }
+        WaitResult::Interrupted => {
+            Errno::set(Errno::EAGAIN);
+            -1
+        }
+    }
 }
 
 pub unsafe fn sem_timedwait(sem: *mut sem_t, abs_timeout: *const timespec) -> int {
-    unsafe { internal::sem_timedwait(sem, abs_timeout) }
-}
+    let mut current_time = timespec::new_zeroed();
+    let mut wait_time = timespec::new_zeroed();
 
-pub unsafe fn sem_unlink(name: *const c_char) -> int {
-    unsafe { internal::sem_unlink(name) }
-}
+    loop {
+        if unsafe { sem_trywait(sem) } == 0 {
+            return 0;
+        }
 
-pub unsafe fn sem_open(name: *const c_char, oflag: int) -> *mut sem_t {
-    unsafe { internal::sem_open(name, oflag) }
-}
+        unsafe {
+            clock_gettime(CLOCK_REALTIME, &mut current_time);
+        }
 
-pub unsafe fn sem_destroy(sem: *mut sem_t) -> int {
-    unsafe { internal::sem_destroy(sem) }
-}
+        let abs_timeout = unsafe { *abs_timeout };
+        if (current_time.tv_sec > abs_timeout.tv_sec)
+            || (current_time.tv_sec == abs_timeout.tv_sec
+                && current_time.tv_nsec > abs_timeout.tv_nsec)
+        {
+            Errno::set(Errno::ETIMEDOUT);
+            return -1;
+        }
 
-pub unsafe fn sem_init(sem: *mut sem_t, pshared: int, value: uint) -> int {
-    unsafe { internal::sem_init(sem, pshared, value) }
-}
+        current_time.tv_sec = 0;
+        current_time.tv_nsec = 1000000;
 
-pub unsafe fn sem_close(sem: *mut sem_t) -> int {
-    unsafe { internal::sem_close(sem) }
-}
-
-mod internal {
-    use super::*;
-
-    unsafe extern "C" {
-        pub(super) fn sem_open(name: *const c_char, oflag: int, ...) -> *mut sem_t;
-
-        pub(super) fn sem_post(sem: *mut sem_t) -> int;
-
-        pub(super) fn sem_wait(sem: *mut sem_t) -> int;
-
-        pub(super) fn sem_trywait(sem: *mut sem_t) -> int;
-
-        pub(super) fn sem_timedwait(sem: *mut sem_t, abs_timeout: *const timespec) -> int;
-
-        pub(super) fn sem_unlink(name: *const c_char) -> int;
-
-        pub(super) fn sem_destroy(sem: *mut sem_t) -> int;
-
-        pub(super) fn sem_init(sem: *mut sem_t, pshared: int, value: uint) -> int;
-
-        pub(super) fn sem_close(sem: *mut sem_t) -> int;
+        unsafe {
+            libc::nanosleep(&current_time, &mut wait_time);
+        }
     }
+}
+
+pub unsafe fn sem_unlink(_name: *const c_char) -> int {
+    -1
+}
+
+pub unsafe fn sem_open(_name: *const c_char, _oflag: int) -> *mut sem_t {
+    SEM_FAILED
+}
+
+pub unsafe fn sem_close(_sem: *mut sem_t) -> int {
+    -1
+}
+
+pub unsafe fn sem_destroy(_sem: *mut sem_t) -> int {
+    0
+}
+
+pub unsafe fn sem_init(sem: *mut sem_t, _pshared: int, value: uint) -> int {
+    let sem: &mut _ = unsafe { &mut *sem };
+    sem.semaphore = Semaphore::new(value as _);
+    Errno::set(Errno::ESUCCES);
+    0
 }
