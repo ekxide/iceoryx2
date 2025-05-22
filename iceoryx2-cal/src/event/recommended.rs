@@ -12,8 +12,20 @@
 
 /// Provides the recommended inter-process [`Event`](crate::event::Event) concept implementation
 /// for the target.
+#[cfg(not(target_os = "vxworks"))]
 pub type Ipc = crate::event::unix_datagram_socket::EventImpl;
+
+/// Provides the recommended inter-process [`Event`](crate::event::Event) concept implementation
+/// for the target on VxWorks.
+#[cfg(target_os = "vxworks")]
+pub type Ipc = crate::event::sem_bitset_posix_shared_memory::Event;
 
 /// Provides the recommended process-local [`Event`](crate::event::Event) concept implementation
 /// for the target.
+#[cfg(not(target_os = "vxworks"))]
 pub type Local = crate::event::process_local_socketpair::EventImpl;
+
+/// Provides the recommended process-local [`Event`](crate::event::Event) concept implementation
+/// for the target.
+#[cfg(target_os = "vxworks")]
+pub type Local = crate::event::sem_bitset_posix_shared_memory::Event;

@@ -15,6 +15,8 @@
 
 use crate::common::mem_zeroed_struct::MemZeroedStruct;
 use crate::posix::SockAddrIn;
+use iceoryx2_pal_concurrency_sync::semaphore::*;
+
 pub type ulong = libc::c_ulong;
 
 #[repr(C)]
@@ -121,11 +123,22 @@ impl MemZeroedStruct for pthread_mutexattr_t {}
 // this should be safe since we do not access the fields directly but
 // the alignment might need to be 8 -> TODO test the alignment with a C library
 // that returns size and alignment of sem_t
-#[repr(C, align(4))]
+//#[repr(C, align(4))]
+//pub struct sem_t {
+//    _dummy: [u8; 8],
+//}
+//impl Struct for sem_t {}
+
 pub struct sem_t {
-    _dummy: [u8; 8],
+    pub(crate) semaphore: Semaphore,
 }
-impl MemZeroedStruct for sem_t {}
+impl MemZeroedStruct for sem_t {
+    fn new_zeroed() -> Self {
+        Self {
+            semaphore: Semaphore::new(0),
+        }
+    }
+}
 
 #[repr(C)]
 pub struct flock {
