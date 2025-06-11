@@ -241,3 +241,11 @@
     `pthread_rwlock_clockwrlock`
 * Publisher delivers history only when calling send
     * New subscriber may waits a long time when send is not called
+
+## VxWorks TODOs
+
+* Check also this for Rust on VxWorks -> https://github.com/RealJohnSmith/vxworks-rust-development-notes/blob/master/first-project.md
+
+* See also vxworks7-ros2 for qemu test setup -> https://github.com/Wind-River/vxworks7-ros2-build/tree/master/tests
+
+* C shm https://github.com/Zeeshan3431/Shared-Memory-implementation-in-vxworks/tree/main
