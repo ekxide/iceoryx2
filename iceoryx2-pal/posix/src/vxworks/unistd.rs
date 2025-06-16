@@ -1,0 +1,139 @@
+// Copyright (c) 2023 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache Software License 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0, or the MIT license
+// which is available at https://opensource.org/licenses/MIT.
+//
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+#![allow(non_camel_case_types, non_snake_case)]
+#![allow(clippy::missing_safety_doc)]
+
+use crate::posix::{self, types::*};
+use alloc::borrow::ToOwned;
+use alloc::ffi::CString;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
+
+pub unsafe fn proc_pidpath(pid: pid_t, buffer: *mut c_char, buffer_len: size_t) -> isize {
+    unsafe {
+        let path = if pid == libc::getpid() {
+            c"/proc/self/exe".to_owned()
+        } else {
+            CString::new(format!("/proc/{pid}/exe")).expect("String without 0 bytes")
+        };
+        libc::readlink(path.as_bytes().as_ptr().cast(), buffer.cast(), buffer_len)
+    }
+}
+
+pub unsafe fn sysconf(name: int) -> long {
+    unsafe { libc::sysconf(name) }
+}
+
+pub unsafe fn pathconf(path: *const c_char, name: int) -> long {
+    unsafe { libc::pathconf(path, name) }
+}
+
+pub unsafe fn getpid() -> pid_t {
+    unsafe { libc::getpid() }
+}
+
+pub unsafe fn gethostpid() -> pid_t {
+    unsafe {
+        let fd = posix::open(c"/proc/self/status".as_ptr(), posix::O_RDONLY);
+        if fd < 0 {
+            return posix::getpid();
+        }
+        let mut buffer = [0u8; 1024];
+        let number_of_bytes = posix::read(fd, buffer.as_mut_ptr().cast(), buffer.len() - 1);
+        posix::close(fd);
+
+        if number_of_bytes < 0 {
+            return posix::getpid();
+        }
+
+        let string_buffer = String::from_utf8_lossy(&buffer);
+
+        const STATUS_ENTRY: &str = "NSpid:";
+        let nspid_line = match string_buffer.lines().find(|l| l.starts_with(STATUS_ENTRY)) {
+            Some(l) => l,
+            None => return posix::getpid(),
+        };
+
+        let pids: Vec<pid_t> = nspid_line
+            .trim_start_matches(STATUS_ENTRY)
+            .split_whitespace()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        match pids.as_slice() {
+            // in a PID namespace, the first value is the host PID
+            [host_pid, _, ..] => *host_pid, // In a namespace, first value is host PID
+            // if there is no PID namespce, then we use the only PID listed
+            [only_pid] => *only_pid,
+            // the NSpid: field is empty and we fall back to getpid
+            [] => posix::getpid(),
+        }
+    }
+}
+
+pub unsafe fn getppid() -> pid_t {
+    unsafe { libc::getppid() }
+}
+
+pub unsafe fn dup(fildes: int) -> int {
+    unsafe { libc::dup(fildes) }
+}
+
+pub unsafe fn close(fd: int) -> int {
+    unsafe { libc::close(fd) }
+}
+
+pub unsafe fn read(fd: int, buf: *mut void, count: size_t) -> ssize_t {
+    unsafe { libc::read(fd, buf, count) }
+}
+
+pub unsafe fn write(fd: int, buf: *const void, count: size_t) -> ssize_t {
+    unsafe { libc::write(fd, buf, count) }
+}
+
+pub unsafe fn access(pathname: *const c_char, mode: int) -> int {
+    unsafe { libc::access(pathname, mode) }
+}
+
+pub unsafe fn unlink(pathname: *const c_char) -> int {
+    unsafe { libc::unlink(pathname) }
+}
+
+pub unsafe fn lseek(fd: int, offset: off_t, whence: int) -> off_t {
+    unsafe { libc::lseek(fd, offset, whence) }
+}
+
+pub unsafe fn getuid() -> uid_t {
+    unsafe { libc::getuid() }
+}
+
+pub unsafe fn getgid() -> gid_t {
+    unsafe { libc::getgid() }
+}
+
+pub unsafe fn rmdir(pathname: *const c_char) -> int {
+    unsafe { libc::rmdir(pathname) }
+}
+
+pub unsafe fn ftruncate(fd: int, length: off_t) -> int {
+    unsafe { libc::ftruncate(fd, length) }
+}
+
+pub unsafe fn fchown(fd: int, owner: uid_t, group: gid_t) -> int {
+    unsafe { libc::fchown(fd, owner, group) }
+}
+
+pub unsafe fn fsync(fd: int) -> int {
+    unsafe { libc::fsync(fd) }
+}
