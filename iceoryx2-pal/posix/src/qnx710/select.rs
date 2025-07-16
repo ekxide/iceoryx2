@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Contributors to the Eclipse Foundation
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -64,7 +64,7 @@ pub unsafe fn FD_ZERO(set: *mut fd_set) {
 mod internal {
     use super::*;
 
-    #[cfg_attr(target_os = "linux", link(name = "c"))]
+    #[cfg_attr(target_os = "nto", link(name = "c"))]
     extern "C" {
         pub(super) fn iceoryx2_cmsg_space(len: size_t) -> size_t;
         pub(super) fn iceoryx2_cmsg_firsthdr(hdr: *const msghdr) -> *mut cmsghdr;

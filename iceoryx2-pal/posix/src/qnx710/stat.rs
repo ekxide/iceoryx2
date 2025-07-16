@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Contributors to the Eclipse Foundation
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -18,7 +18,7 @@ use crate::posix::types::*;
 
 pub unsafe fn stat(path: *const c_char, buf: *mut stat_t) -> int {
     let mut os_specific_buffer = native_stat_t::new_zeroed();
-    match crate::internal::stat(path, &mut os_specific_buffer) {
+    match internal::stat(path, &mut os_specific_buffer) {
         0 => {
             *buf = os_specific_buffer.into();
             0
@@ -29,4 +29,22 @@ pub unsafe fn stat(path: *const c_char, buf: *mut stat_t) -> int {
 
 pub unsafe fn umask(mask: mode_t) -> mode_t {
     crate::internal::umask(mask)
+}
+
+#[cfg(target_pointer_width = "32")]
+mod internal {
+    use super::*;
+
+    pub unsafe fn stat(path: *const c_char, buf: &mut native_stat_t) -> int {
+        crate::internal::stat(path, buf)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+mod internal {
+    use super::*;
+
+    pub unsafe fn stat(path: *const c_char, buf: &mut native_stat_t) -> int {
+        crate::internal::stat64(path, buf)
+    }
 }

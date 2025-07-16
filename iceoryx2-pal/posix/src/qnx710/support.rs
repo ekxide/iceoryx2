@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Contributors to the Eclipse Foundation
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -13,7 +13,7 @@
 pub const POSIX_SUPPORT_ACL: bool = true;
 pub const POSIX_SUPPORT_NAMED_SEMAPHORE: bool = true;
 pub const POSIX_SUPPORT_PERSISTENT_SHARED_MEMORY: bool = true;
-pub const POSIX_SUPPORT_UNIX_DATAGRAM_SOCKETS_ANCILLARY_DATA: bool = true;
+pub const POSIX_SUPPORT_UNIX_DATAGRAM_SOCKETS_ANCILLARY_DATA: bool = false;
 pub const POSIX_SUPPORT_USERS_AND_GROUPS: bool = true;
 pub const POSIX_SUPPORT_PERMISSIONS: bool = true;
 pub const POSIX_SUPPORT_FILE_LOCK: bool = true;

@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Contributors to the Eclipse Foundation
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -13,13 +13,10 @@
 #![allow(non_camel_case_types)]
 #![allow(clippy::missing_safety_doc)]
 
-use crate::{
-    common::{cpu_set_t::cpu_set_t, mem_zeroed_struct::MemZeroedStruct},
-    posix::*,
-};
+use crate::posix::*;
 
-pub unsafe fn pthread_rwlockattr_setkind_np(attr: *mut pthread_rwlockattr_t, pref: int) -> int {
-    crate::internal::pthread_rwlockattr_setkind_np(attr, pref)
+pub unsafe fn pthread_rwlockattr_setkind_np(_attr: *mut pthread_rwlockattr_t, _pref: int) -> int {
+    todo!(); // not available on QNX; implement some other way or remove
 }
 
 pub unsafe fn pthread_barrier_wait(barrier: *mut pthread_barrier_t) -> int {
@@ -85,13 +82,11 @@ pub unsafe fn pthread_attr_setstacksize(attr: *mut pthread_attr_t, stacksize: si
 }
 
 pub unsafe fn pthread_attr_setaffinity_np(
-    attr: *mut pthread_attr_t,
-    cpusetsize: size_t,
-    cpuset: *const cpu_set_t,
+    _attr: *mut pthread_attr_t,
+    _cpusetsize: size_t,
+    _cpuset: *const cpu_set_t,
 ) -> int {
-    let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
-
-    internal::pthread_attr_setaffinity_np(attr, cpusetsize, &cpuset)
+    todo!(); // not available on QNX; implement some other way or remove
 }
 
 pub unsafe fn pthread_create(
@@ -116,7 +111,7 @@ pub unsafe fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int 
 }
 
 pub unsafe fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int {
-    internal::pthread_getname_np(thread, name, len)
+    internal::pthread_getname_np(thread, name, len as int)
 }
 
 pub unsafe fn pthread_kill(thread: pthread_t, sig: int) -> int {
@@ -124,27 +119,19 @@ pub unsafe fn pthread_kill(thread: pthread_t, sig: int) -> int {
 }
 
 pub unsafe fn pthread_setaffinity_np(
-    thread: pthread_t,
-    cpusetsize: size_t,
-    cpuset: *const cpu_set_t,
+    _thread: pthread_t,
+    _cpusetsize: size_t,
+    _cpuset: *const cpu_set_t,
 ) -> int {
-    let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
-
-    internal::pthread_setaffinity_np(thread, cpusetsize, &cpuset)
+    todo!(); // not available on QNX; implement some other way or remove
 }
 
 pub unsafe fn pthread_getaffinity_np(
-    thread: pthread_t,
-    cpusetsize: size_t,
-    cpuset: *mut cpu_set_t,
+    _thread: pthread_t,
+    _cpusetsize: size_t,
+    _cpuset: *mut cpu_set_t,
 ) -> int {
-    let mut native_cpuset = native_cpu_set_t::new_zeroed();
-
-    let ret_val = internal::pthread_getaffinity_np(thread, cpusetsize, &mut native_cpuset);
-
-    *cpuset = core::mem::transmute::<native_cpu_set_t, cpu_set_t>(native_cpuset);
-
-    ret_val
+    todo!(); // not available on QNX; implement some other way or remove
 }
 
 pub unsafe fn pthread_rwlockattr_init(attr: *mut pthread_rwlockattr_t) -> int {
@@ -253,24 +240,8 @@ mod internal {
 
     #[cfg_attr(target_os = "linux", link(name = "pthread"))]
     extern "C" {
-        pub(super) fn pthread_attr_setaffinity_np(
-            attr: *mut pthread_attr_t,
-            cpusetsize: size_t,
-            cpuset: *const native_cpu_set_t,
-        ) -> int;
-
         pub(super) fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int;
-        pub(super) fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int;
+        pub(super) fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: int) -> int;
         pub(super) fn pthread_kill(thread: pthread_t, sig: int) -> int;
-        pub(super) fn pthread_setaffinity_np(
-            thread: pthread_t,
-            cpusetsize: size_t,
-            cpuset: *const native_cpu_set_t,
-        ) -> int;
-        pub(super) fn pthread_getaffinity_np(
-            thread: pthread_t,
-            cpusetsize: size_t,
-            cpuset: *mut native_cpu_set_t,
-        ) -> int;
     }
 }

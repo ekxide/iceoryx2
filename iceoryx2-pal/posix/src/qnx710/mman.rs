@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Contributors to the Eclipse Foundation
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -14,6 +14,9 @@
 #![allow(clippy::missing_safety_doc)]
 
 use crate::posix::{closedir, opendir, readdir, types::*};
+extern crate alloc;
+use alloc::vec;
+use alloc::vec::Vec;
 
 pub unsafe fn mlock(addr: *const void, len: size_t) -> int {
     crate::internal::mlock(addr, len)
@@ -84,7 +87,7 @@ pub unsafe fn mmap(
     fd: int,
     off: off_t,
 ) -> *mut void {
-    crate::internal::mmap(addr, len, prot, flags, fd, off)
+    internal::mmap(addr, len, prot, flags, fd, off)
 }
 
 pub unsafe fn munmap(addr: *mut void, len: size_t) -> int {
@@ -93,4 +96,36 @@ pub unsafe fn munmap(addr: *mut void, len: size_t) -> int {
 
 pub unsafe fn mprotect(addr: *mut void, len: size_t, prot: int) -> int {
     crate::internal::mprotect(addr, len, prot)
+}
+
+#[cfg(target_pointer_width = "32")]
+mod internal {
+    use super::*;
+
+    pub unsafe fn mmap(
+        addr: *mut void,
+        len: size_t,
+        prot: int,
+        flags: int,
+        fd: int,
+        off: off_t,
+    ) -> *mut void {
+        crate::internal::mmap(addr, len, prot, flags, fd, off)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+mod internal {
+    use super::*;
+
+    pub unsafe fn mmap(
+        addr: *mut void,
+        len: size_t,
+        prot: int,
+        flags: int,
+        fd: int,
+        off: off_t,
+    ) -> *mut void {
+        crate::internal::mmap64(addr, len, prot, flags, fd, off)
+    }
 }
