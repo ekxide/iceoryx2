@@ -12,7 +12,7 @@
 
 #[generic_tests::define]
 mod node_death_tests {
-    use core::sync::atomic::{AtomicU32, Ordering};
+    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
     use iceoryx2::config::Config;
     use iceoryx2::node::testing::__internal_node_staged_death;
@@ -23,6 +23,7 @@ mod node_death_tests {
     use iceoryx2_bb_posix::unique_system_id::UniqueSystemId;
     use iceoryx2_bb_testing::watchdog::Watchdog;
     use iceoryx2_bb_testing::{assert_that, test_fail};
+    use std::sync::Barrier;
 
     struct TestDetails<S: Service> {
         node: Node<S>,
@@ -822,6 +823,96 @@ mod node_death_tests {
         drop(node_with_cleanup);
 
         assert_that!(number_of_nodes(), eq 0);
+    }
+
+    #[test]
+    fn event_is_last_to_clean_up<S: Test>() {
+        let _watch_dog = Watchdog::new();
+        const NUMBER_OF_BAD_NODES: usize = 1; // TODO: increase
+        const NUMBER_OF_PUBLISHERS: usize = NUMBER_OF_BAD_NODES;
+        const NUMBER_OF_NOTIFIERS: usize = NUMBER_OF_BAD_NODES;
+
+        let mut config = generate_isolated_config();
+        let service_name = generate_service_name();
+        let notifier_dead_event = EventId::new(8);
+        config.global.node.cleanup_dead_nodes_on_creation = false;
+
+        let mut bad_nodes = vec![];
+        for _ in 0..NUMBER_OF_BAD_NODES {
+            bad_nodes.push(S::create_test_node(&config).node);
+        }
+        let node = NodeBuilder::new()
+            .config(&config)
+            .create::<S::Service>()
+            .unwrap();
+
+        let event_service = node
+            .service_builder(&service_name)
+            .event()
+            .max_nodes(NUMBER_OF_BAD_NODES + 1)
+            .max_notifiers(NUMBER_OF_NOTIFIERS)
+            .notifier_dead_event(notifier_dead_event)
+            .create()
+            .unwrap();
+
+        let pub_sub_service = node
+            .service_builder(&service_name)
+            .publish_subscribe::<u64>()
+            .max_nodes(NUMBER_OF_BAD_NODES + 1)
+            .max_publishers(NUMBER_OF_PUBLISHERS)
+            .create()
+            .unwrap();
+        let subscriber = pub_sub_service.subscriber_builder().create().unwrap();
+
+        let all_nodes_dead = AtomicBool::new(false);
+        std::thread::scope(|s| {
+            let t = s.spawn(|| {
+                let listener = event_service.listener_builder().create().unwrap();
+                while !all_nodes_dead.load(Ordering::Relaxed) {
+                    listener.try_wait_all(|event| {
+                        assert_that!(event, eq notifier_dead_event);
+                        // test fails here; when service creation below is swapped, the test works.
+                        // the problem is probably that cleanup_dead_nodes iterates over the
+                        // service tags and the order of the tags defines the cleanup order
+                        assert_that!(pub_sub_service.dynamic_config().number_of_publishers(), eq 0);
+                    })
+                    .unwrap();
+                }
+            });
+
+            let mut threads = vec![];
+            for mut node in bad_nodes.iter_mut() {
+                let service_name = &service_name;
+                let config = &config;
+                threads.push(s.spawn(move || {
+                    let pub_sub_service = node
+                        .service_builder(&service_name)
+                        .publish_subscribe::<u64>()
+                        .open()
+                        .unwrap();
+                    let publisher = pub_sub_service.publisher_builder().create().unwrap();
+
+                    let event_service = node
+                        .service_builder(&service_name)
+                        .event()
+                        .open()
+                        .unwrap();
+                    let notifier = event_service.notifier_builder().create().unwrap();
+
+                    S::staged_death(&mut node);
+                    core::mem::forget(publisher);
+                    core::mem::forget(notifier);
+                    assert_that!(Node::<S::Service>::cleanup_dead_nodes(&config), eq CleanupState { cleanups: 1, failed_cleanups: 0});
+                }));
+            }
+
+            for t in threads {
+                t.join().unwrap();
+            }
+            all_nodes_dead.store(true, Ordering::Relaxed);
+
+            t.join().unwrap();
+        });
     }
 
     #[instantiate_tests(<ZeroCopy>)]

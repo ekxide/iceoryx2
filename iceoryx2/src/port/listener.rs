@@ -256,8 +256,7 @@ impl<Service: service::Service> Listener<Service> {
     }
 
     /// Non-blocking wait for a new [`EventId`]. If no [`EventId`] was notified it returns [`None`].
-    /// On error it returns [`ListenerWaitError`] is returned which describes the error
-    /// in detail.
+    /// On error it returns [`ListenerWaitError`] which describes the error in detail.
     pub fn try_wait_one(&self) -> Result<Option<EventId>, ListenerWaitError> {
         use iceoryx2_cal::event::Listener;
         Ok(fail!(from self, when self.listener.lock().try_wait_one(),
@@ -266,8 +265,7 @@ impl<Service: service::Service> Listener<Service> {
 
     /// Blocking wait for a new [`EventId`] until either an [`EventId`] was received or the timeout
     /// has passed. If no [`EventId`] was notified it returns [`None`].
-    /// On error it returns [`ListenerWaitError`] is returned which describes the error
-    /// in detail.
+    /// On error it returns [`ListenerWaitError`] which describes the error in detail.
     pub fn timed_wait_one(&self, timeout: Duration) -> Result<Option<EventId>, ListenerWaitError> {
         use iceoryx2_cal::event::Listener;
         Ok(
@@ -278,8 +276,7 @@ impl<Service: service::Service> Listener<Service> {
 
     /// Blocking wait for a new [`EventId`].
     /// Sporadic wakeups can occur and if no [`EventId`] was notified it returns [`None`].
-    /// On error it returns [`ListenerWaitError`] is returned which describes the error
-    /// in detail.
+    /// On error it returns [`ListenerWaitError`] which describes the error in detail.
     pub fn blocking_wait_one(&self) -> Result<Option<EventId>, ListenerWaitError> {
         use iceoryx2_cal::event::Listener;
         Ok(
