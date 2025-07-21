@@ -23,13 +23,6 @@ mod common;
 #[path = "libc/mod.rs"]
 mod platform;
 
-#[cfg(all(
-    target_os = "nto",
-    target_env = "nto71",
-    not(feature = "libc_platform")
-))]
-#[path = "qnx710/mod.rs"]
-mod platform;
 #[cfg(all(target_os = "freebsd", not(feature = "libc_platform")))]
 #[path = "freebsd/mod.rs"]
 mod platform;
@@ -39,6 +32,9 @@ mod platform;
 #[cfg(all(target_os = "linux", not(feature = "libc_platform")))]
 #[path = "linux/mod.rs"]
 pub mod platform;
+#[cfg(all(target_os = "nto", not(feature = "libc_platform")))]
+#[path = "qnx/mod.rs"]
+mod platform;
 #[cfg(all(target_os = "windows", not(feature = "libc_platform")))]
 #[path = "windows/mod.rs"]
 mod platform;
