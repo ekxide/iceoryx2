@@ -22,8 +22,11 @@ fn main() {
     use std::env;
     use std::path::PathBuf;
 
-    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-    println!("cargo:rustc-link-lib=pthread");
+    // #[cfg(any(...))] does not work when cross-compiling
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    if target_os == "linux" || target_os == "freebsd" {
+        println!("cargo:rustc-link-lib=pthread");
+    }
 
     println!("cargo:rerun-if-changed=src/c/posix.h");
 
