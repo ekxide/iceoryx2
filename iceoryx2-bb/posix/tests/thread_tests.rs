@@ -11,7 +11,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use iceoryx2_bb_posix::thread::*;
-use iceoryx2_bb_testing::assert_that;
+use iceoryx2_bb_testing::{assert_that, test_requires};
+use iceoryx2_pal_posix::posix::POSIX_SUPPORT_CPU_AFFINITY;
 
 use core::time::Duration;
 
@@ -63,6 +64,8 @@ fn thread_creation_does_not_block() {
 
 #[test]
 fn thread_affinity_is_at_least_core_zero() {
+    test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
+
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
         let barrier = barrier.clone();
@@ -87,6 +90,8 @@ fn thread_affinity_is_at_least_core_zero() {
 
 #[test]
 fn thread_set_affinity_on_creation_works() {
+    test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
+
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
         let barrier = barrier.clone();
@@ -112,6 +117,8 @@ fn thread_set_affinity_on_creation_works() {
 
 #[test]
 fn thread_set_affinity_from_handle_works() {
+    test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
+
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
         let barrier = barrier.clone();
@@ -138,6 +145,8 @@ fn thread_set_affinity_from_handle_works() {
 
 #[test]
 fn thread_set_affinity_from_thread_works() {
+    test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
+
     let barrier = Arc::new(Barrier::new(2));
     let mut thread = {
         let barrier = barrier.clone();
@@ -164,6 +173,8 @@ fn thread_set_affinity_from_thread_works() {
 
 #[test]
 fn thread_destructor_does_not_block_on_empty_thread() {
+    test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
+
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
         let barrier = barrier.clone();
@@ -183,6 +194,8 @@ fn thread_destructor_does_not_block_on_empty_thread() {
 
 #[test]
 fn thread_destructor_does_block_on_busy_thread() {
+    test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
+
     const SLEEP_DURATION: Duration = Duration::from_millis(100);
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
