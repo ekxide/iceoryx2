@@ -508,7 +508,7 @@ pub unsafe extern "C" fn iox2_service_builder_blackboard_opener_set_max_nodes(
 #[no_mangle]
 pub unsafe extern "C" fn iox2_service_builder_blackboard_creator_add(
     service_builder_handle: iox2_service_builder_blackboard_creator_h_ref,
-    key: u64,
+    key: KeyFfi,
     value_ptr: *mut c_void,
     release_callback: iox2_service_blackboard_creator_add_release_callback,
     type_name: *const c_char,
@@ -530,13 +530,21 @@ pub unsafe extern "C" fn iox2_service_builder_blackboard_creator_add(
     let internals = BuilderInternals {
         key,
         value_type_details: type_details.clone(),
-        value_writer: Box::new(move |mem: *mut u8| {
-            let mem_atomic: *mut UnrestrictedAtomicMgmt = mem.cast();
-            mem_atomic.write(UnrestrictedAtomicMgmt::new());
-            let addr = mem as usize + core::mem::size_of::<UnrestrictedAtomicMgmt>();
-            let addr = align(addr, type_details.alignment);
+        value_writer: Box::new(move |raw_memory_ptr: *mut u8| {
+            let atomic_mgmt_alignment_offset =
+                raw_memory_ptr.align_offset(align_of::<UnrestrictedAtomicMgmt>());
+            let atomic_mgmt_ptr: *mut UnrestrictedAtomicMgmt =
+                raw_memory_ptr.add(atomic_mgmt_alignment_offset).cast();
+            atomic_mgmt_ptr.write(UnrestrictedAtomicMgmt::new());
+            let payload_ptr =
+                atomic_mgmt_ptr as usize + core::mem::size_of::<UnrestrictedAtomicMgmt>();
+            let payload_ptr = align(payload_ptr, type_details.alignment);
             // TODO: how to realize add_with_default? -> only be solvable on C++ side
-            core::ptr::copy_nonoverlapping(value_ptr, addr as *mut c_void, type_details.size);
+            core::ptr::copy_nonoverlapping(
+                value_ptr,
+                payload_ptr as *mut c_void,
+                type_details.size,
+            );
             release_callback(value_ptr);
             // TODO: what happens on failure, who releases it?
         }),
