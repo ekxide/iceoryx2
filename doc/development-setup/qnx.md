@@ -47,9 +47,35 @@ mkqnximage --help
 
 The following image configuration was used for development of the platform abstraction for QNX:
 
+#### QNX 7.1
+
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN="$HOME/qnx800"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export VM_HOSTNAME="x86_64-qnx-vm"
+export VM_IPV4_ADDR="172.31.1.11"
+
+export IMAGE_DIR="$HOME/images/minimal"
+mkdir -p $IMAGE_DIR
+cd $IMAGE_DIR
+
+mkqnximage \
+    --noprompt \
+    --hostname="$VM_HOSTNAME" \
+    --type=qemu \
+    --arch=x86_64 \
+    --ip="$VM_IPV4_ADDR" \
+    --sys-size=256 \
+    --sys-inodes=24000 \
+    --data-size=256 \
+    --data-inodes=24000
+```
+
+#### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx800"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
 export VM_HOSTNAME="x86_64-qnx-vm"
@@ -73,11 +99,13 @@ mkqnximage \
 
 ### Run a QNX image on QEMU
 
-Images build with `mkqnximage` can be run using the `--run` option:
+Images build with `mkqnximage` can be run using the `--run` option.
+Alternatively, use QEMU directly for more fine-grained control over the emulation.
+
+#### QNX 7.1
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN="$HOME/qnx800"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
 export IMAGE_DIR="$HOME/images/minimal"
@@ -86,11 +114,22 @@ cd $IMAGE_DIR
 mkqnximage --run
 ```
 
-Alternatively, use QEMU directly for more fine-grained control over the emulation:
+#### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx800"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export IMAGE_DIR="$HOME/images/minimal"
+cd $IMAGE_DIR
+
+mkqnximage --run
+```
+
+#### QNX 7.1
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN="$HOME/qnx800"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
 export IMAGE_DIR="$HOME/images/minimal"
@@ -100,7 +139,34 @@ mkdir -p $SHARED_DIR
 export MAC=$(printf "52:54:00:%02x:%02x:%02x" $(( $RANDOM & 0xff)) $(( $RANDOM & 0xff )) $(( $RANDOM & 0xff)))
 
 sudo ${QNX_TOOLCHAIN}/host/common/mkqnximage/qemu/net.sh /usr/lib/qemu/qemu-bridge-helper /etc/qemu/bridge.conf
-# sudo ${QNX_TOOLCHAIN}/host/common/mkqnximage/qemu/net.sh /usr/lib/qemu/qemu-bridge-helper /etc/qemu/bridge.conf bridge
+
+qemu-system-x86_64 \
+  -smp 2 \
+  -m 1G \
+  -drive file=${IMAGE_DIR}/output/disk-qemu.vmdk,if=ide,id=drv0 \
+  -hdb fat:rw:${IMAGE_DIR}/shared \
+  -netdev bridge,br=br0,id=net0 \
+  -device e1000,netdev=net0,mac=$MAC \
+  -nographic \
+  -kernel ${IMAGE_DIR}/output/ifs.bin \
+  -serial mon:stdio \
+  -object rng-random,filename=/dev/urandom,id=rng0 \
+  -device virtio-rng-pci,rng=rng0
+```
+
+#### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx800"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export IMAGE_DIR="$HOME/images/minimal"
+export SHARED_DIR="${IMAGE_DIR}/shared"
+mkdir -p $SHARED_DIR
+
+export MAC=$(printf "52:54:00:%02x:%02x:%02x" $(( $RANDOM & 0xff)) $(( $RANDOM & 0xff )) $(( $RANDOM & 0xff)))
+
+sudo ${QNX_TOOLCHAIN}/host/common/mkqnximage/qemu/net.sh /usr/lib/qemu/qemu-bridge-helper /etc/qemu/bridge.conf bridge
 
 qemu-system-x86_64 \
   -smp 2 \
@@ -124,11 +190,10 @@ due to the dependence on the QNX toolchain.
 The QNX targets supported by the Rust compiler can be found in [the `rustc` book](
 https://doc.rust-lang.org/rustc/platform-support/nto-qnx.html).
 
-An example build:
+#### QNX 7.1:
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN="$HOME/qnx800"
 source ${QNX_TOOLCHAIN}/qnxsdp-env.sh
 
 # Clone Rust source
@@ -153,19 +218,38 @@ export build_env='
     '
 ./x.py build --target aarch64-unknown-nto-qnx710,x86_64-pc-nto-qnx710,x86_64-unknown-linux-gnu rustc library/core library/alloc library/std library tools/rustfmt
 
-# ### QNX 8 targets ###
-# export build_env='
-#     CC_x86_64_pc_nto_qnx80=qcc
-#     CFLAGS_x86_64_pc_nto_qnx800=-Vgcc_ntox86_64_cxx
-#     CXX_x86_64_pc_nto_qnx800=qcc
-#     AR_x86_64_pc_nto_qnx800=ntox86_64-ar
-#     CC_aarch64_unknown_nto_qnx800=qcc
-#     CFLAGS_aarch64_unknown_nto_qnx800=-Vgcc_ntoaarch64le_cxx
-#     CXX_aarch64_unknown_nto_qnx800=qcc
-#     AR_aarch64_unknown_nto_qnx800=ntoaarch64-ar
-#     '
-# 
-# ./x.py build --target aarch64-unknown-nto-qnx800,x86_64-pc-nto-qnx800,x86_64-unknown-linux-gnu rustc library/core library/alloc library/std library tools/rustfmt
+# Create a symlink for easier use
+rustup toolchain link qnx-custom $RUSTDIR/build/host/stage1
+```
+
+#### QNX 8.0:
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx800"
+source ${QNX_TOOLCHAIN}/qnxsdp-env.sh
+
+# Clone Rust source
+export RUSTDIR=~/source/rust
+git clone https://github.com/rust-lang/rust.git -b 1.88.0 --depth 1 $RUSTDIR
+
+# Configure the build
+echo -e "[build]\nextended = true" > $RUSTDIR/config.toml
+
+# Build the compiler (x86_64 and aarch64 targets)
+cd $RUSTDIR
+
+export build_env='
+    CC_x86_64_pc_nto_qnx80=qcc
+    CFLAGS_x86_64_pc_nto_qnx800=-Vgcc_ntox86_64_cxx
+    CXX_x86_64_pc_nto_qnx800=qcc
+    AR_x86_64_pc_nto_qnx800=ntox86_64-ar
+    CC_aarch64_unknown_nto_qnx800=qcc
+    CFLAGS_aarch64_unknown_nto_qnx800=-Vgcc_ntoaarch64le_cxx
+    CXX_aarch64_unknown_nto_qnx800=qcc
+    AR_aarch64_unknown_nto_qnx800=ntoaarch64-ar
+    '
+
+./x.py build --target aarch64-unknown-nto-qnx800,x86_64-pc-nto-qnx800,x86_64-unknown-linux-gnu rustc library/core library/alloc library/std library tools/rustfmt
 
 # Create a symlink for easier use
 rustup toolchain link qnx-custom $RUSTDIR/build/host/stage1
@@ -180,38 +264,58 @@ Use the custom-built compiler to build for QNX targets:
 
 #### x86_64
 
+##### QNX 7.1
+
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN=$HOME/qnx800
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
 export COMPILER_DEFINES="-D__QNX__ -D__QNXNTO__ -D__GNUC__=8 -D__GNUC_MINOR__=3 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__ "
 export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
 export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
 
-cargo +qnx-custom build --target x86_64-pc-nto-qnx710 --package iceoryx2
+cargo +qnx-custom build --target x87_64-pc-nto-qnx710 --package iceoryx2
+```
 
-# ### QNX 8 targets ###
-# export COMPILER_DEFINES="-D__QNX__=800 -D__QNXNTO__ -D__GNUC__=12 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__"
-# export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-# export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
-# 
-# cargo +qnx-custom build --target x86_64-pc-nto-qnx800 --package iceoryx2-pal-posix
+##### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN=$HOME/qnx800
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export COMPILER_DEFINES="-D__QNX__=800 -D__QNXNTO__ -D__GNUC__=12 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__"
+export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
+export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
+
+cargo +qnx-custom build --target x86_64-pc-nto-qnx800 --package iceoryx2-pal-posix
 ```
 
 #### Aarch64
 
+##### QNX 7.1
+
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN=$HOME/qnx800
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
-# ### QNX 8 targets ###
-# export COMPILER_DEFINES="-D__QNX__=800 -D__QNXNTO__ -D__GNUC__=12 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__LITTLEENDIAN__ "
-# export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-# export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
-# 
-# cargo +qnx8-custom build --target aarch64-unknown-nto-qnx800 --package iceoryx2-pal-posix
+export COMPILER_DEFINES="-D__QNX__ -D__QNXNTO__ -D__GNUC__=8 -D__GNUC_MINOR__=3 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__LITTLEENDIAN__ "
+export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
+export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
+
+cargo +qnx-custom build --target x87_64-pc-nto-qnx710 --package iceoryx2
+```
+
+##### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN=$HOME/qnx800
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export COMPILER_DEFINES="-D__QNX__=800 -D__QNXNTO__ -D__GNUC__=12 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__LITTLEENDIAN__ "
+export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
+export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
+
+cargo +qnx8-custom build --target aarch64-unknown-nto-qnx800 --package iceoryx2-pal-posix
 ```
 
 ### Remote Debugging with GDB
@@ -227,9 +331,10 @@ pdebug 1234
 
 Then on the development host, connect to the target via `gdb`:
 
-```
+#### QNX 7.1
+
+```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
-# export QNX_TOOLCHAIN=$HOME/qnx800
 source ${QNX_TOOLCHAIN}/qnxsdp-env.sh
 
 ntox86_64-gdb
@@ -237,4 +342,53 @@ file path/to/binary
 target qnx 172.31.1.11:1234 # If using same image as above
 upload path/to/binary data/home/root/binary
 run
+```
+
+#### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN=$HOME/qnx800
+source ${QNX_TOOLCHAIN}/qnxsdp-env.sh
+
+ntox86_64-gdb
+file path/to/binary
+target qnx 172.31.1.11:1234 # If using same image as above
+upload path/to/binary data/home/root/binary
+run
+```
+
+### Running Benchmarks
+
+#### QNX 7.1
+
+First build the benchmarks:
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx710"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export COMPILER_DEFINES="-D__QNX__ -D__QNXNTO__ -D__GNUC__=8 -D__GNUC_MINOR__=3 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__ "
+export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
+export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
+
+cargo +qnx-custom build --target x86_64-pc-nto-qnx710 --package benchmark-publish-subscribe --package benchmark-event --package benchmark-request-response
+```
+
+Then transfer the binaries to the target e.g. via `gdb`:
+
+```sh
+ntox86_64-gdb
+target qnx 172.31.1.11:1234 # If using same image as above
+upload target/x86_64-pc-nto-qnx710/debug/benchmark-publish-subscribe data/home/root/benchmark-publish-subscribe
+upload target/x86_64-pc-nto-qnx710/debug/benchmark-event data/home/root/benchmark-event
+upload target/x86_64-pc-nto-qnx710/debug/benchmark-request-response data/home/root/benchmark-request-response
+```
+
+The benchmarks can then be executed from the target:
+
+```sh
+cd /data/home/root
+./benchmark-publish-subscribe --bench-all --iterations 1000
+./benchmark-event --bench-all --iterations 1000
+./benchmark-request-response --iterations 1000
 ```
