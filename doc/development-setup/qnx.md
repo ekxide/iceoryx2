@@ -358,24 +358,33 @@ First build the benchmarks:
 export QNX_TOOLCHAIN="$HOME/qnx710"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
-cargo +qnx-custom build --target x86_64-pc-nto-qnx710 --package benchmark-publish-subscribe --package benchmark-event --package benchmark-request-response
+cargo +qnx-custom build --release --target x86_64-pc-nto-qnx710 --package benchmark-publish-subscribe --package benchmark-event --package benchmark-request-response --package benchmark-queue
 ```
 
-Then transfer the binaries to the target e.g. via `gdb`:
+Then transfer the binaries to the target e.g. via `gdb` by first starting `pdebug`:
+
+```sh
+pdebug 1234
+```
+
+Then uploading the binaries:
 
 ```sh
 ntox86_64-gdb
 target qnx 172.31.1.11:1234 # If using same image as above
-upload target/x86_64-pc-nto-qnx710/debug/benchmark-publish-subscribe data/home/root/benchmark-publish-subscribe
-upload target/x86_64-pc-nto-qnx710/debug/benchmark-event data/home/root/benchmark-event
-upload target/x86_64-pc-nto-qnx710/debug/benchmark-request-response data/home/root/benchmark-request-response
+upload target/x86_64-pc-nto-qnx710/release/benchmark-publish-subscribe data/home/root/benchmark-publish-subscribe
+upload target/x86_64-pc-nto-qnx710/release/benchmark-event data/home/root/benchmark-event
+upload target/x86_64-pc-nto-qnx710/release/benchmark-request-response data/home/root/benchmark-request-response
+upload target/x86_64-pc-nto-qnx710/release/benchmark-queue data/home/root/benchmark-queue
 ```
 
 The benchmarks can then be executed from the target:
 
 ```sh
 cd /data/home/root
-./benchmark-publish-subscribe --bench-all --iterations 1000
+
+./benchmark-publish-subscribe --bench-all --iterations 1000000
 ./benchmark-event --bench-all --iterations 1000
-./benchmark-request-response --iterations 1000
+./benchmark-request-response --iterations 1000000
+./benchmark-queue --iterations 1000000
 ```
