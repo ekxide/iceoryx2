@@ -212,17 +212,20 @@ impl ThreadBuilder {
     /// let number_of_cores = SystemInfo::NumberOfCpuCores.value();
     /// ```
     pub fn affinity(mut self, value: usize) -> Self {
-        let number_of_cores = SystemInfo::NumberOfCpuCores.value();
-        if value >= number_of_cores {
-            warn!(from self, "The system has cpu cores in the range [0, {}]. Setting affinity to cpu core {} will have no effect.", number_of_cores - 1, value);
-        }
-        if value > MAX_SUPPORTED_CPUS_IN_SYSTEM {
-            warn!(from self, "Maximum range of supported CPUs is [0, {}]. Unable to set affinity to cpu core {}.", number_of_cores - 1, value);
-            return self;
+        if posix::support::POSIX_SUPPORT_CPU_AFFINITY {
+            let number_of_cores = SystemInfo::NumberOfCpuCores.value();
+            if value >= number_of_cores {
+                warn!(from self, "The system has cpu cores in the range [0, {}]. Setting affinity to cpu core {} will have no effect.", number_of_cores - 1, value);
+            }
+            if value > MAX_SUPPORTED_CPUS_IN_SYSTEM {
+                warn!(from self, "Maximum range of supported CPUs is [0, {}]. Unable to set affinity to cpu core {}.", number_of_cores - 1, value);
+                return self;
+            }
+
+            self.affinity = [false; posix::CPU_SETSIZE];
+            self.affinity[value] = true;
         }
 
-        self.affinity = [false; posix::CPU_SETSIZE];
-        self.affinity[value] = true;
         self
     }
 

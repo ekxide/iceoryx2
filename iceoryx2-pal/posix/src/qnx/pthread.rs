@@ -16,7 +16,8 @@
 use crate::posix::*;
 
 pub unsafe fn pthread_rwlockattr_setkind_np(_attr: *mut pthread_rwlockattr_t, _pref: int) -> int {
-    todo!(); // not available on QNX; implement some other way or remove
+    // Not supported on QNX
+    crate::internal::EOK as _
 }
 
 pub unsafe fn pthread_barrier_wait(barrier: *mut pthread_barrier_t) -> int {
@@ -86,7 +87,8 @@ pub unsafe fn pthread_attr_setaffinity_np(
     _cpusetsize: size_t,
     _cpuset: *const cpu_set_t,
 ) -> int {
-    todo!(); // not available on QNX; implement some other way or remove
+    // Not supported on QNX
+    crate::internal::EOK as _
 }
 
 pub unsafe fn pthread_create(
@@ -123,7 +125,8 @@ pub unsafe fn pthread_setaffinity_np(
     _cpusetsize: size_t,
     _cpuset: *const cpu_set_t,
 ) -> int {
-    todo!(); // not available on QNX; implement some other way or remove
+    // Not supported on QNX
+    crate::internal::EOK as _
 }
 
 pub unsafe fn pthread_getaffinity_np(
@@ -131,7 +134,8 @@ pub unsafe fn pthread_getaffinity_np(
     _cpusetsize: size_t,
     _cpuset: *mut cpu_set_t,
 ) -> int {
-    todo!(); // not available on QNX; implement some other way or remove
+    // Not supported on QNX
+    crate::internal::EOK as _
 }
 
 pub unsafe fn pthread_rwlockattr_init(attr: *mut pthread_rwlockattr_t) -> int {
