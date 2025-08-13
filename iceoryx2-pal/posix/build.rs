@@ -30,26 +30,72 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src/c/posix.h");
 
-    let bindings = if std::env::var("DOCS_RS").is_ok() {
-        bindgen::Builder::default()
-            .header("src/c/posix.h")
-            .blocklist_type("max_align_t")
-            .parse_callbacks(Box::new(CargoCallbacks::new()))
-            .clang_arg("-D IOX2_DOCS_RS_SUPPORT")
-            .use_core()
-            .generate()
-            .expect("Unable to generate bindings")
-    } else {
-        {
-            bindgen::Builder::default()
-                .header("src/c/posix.h")
-                .blocklist_type("max_align_t")
-                .parse_callbacks(Box::new(CargoCallbacks::new()))
-                .use_core()
-                .generate()
-                .expect("Unable to generate bindings")
+    let mut builder = bindgen::Builder::default()
+        .header("src/c/posix.h")
+        .blocklist_type("max_align_t")
+        .parse_callbacks(Box::new(CargoCallbacks::new()))
+        .use_core();
+
+    if std::env::var("DOCS_RS").is_ok() {
+        builder = builder.clang_arg("-D IOX2_DOCS_RS_SUPPORT");
+    }
+
+    if target_os == "nto" {
+        let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+        let target_env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap();
+
+        // Common compiler defines for QNX
+        let mut compiler_args = vec![
+            "-D__QNXNTO__",
+            "-D__NO_INLINE__",
+            "-D__DEPRECATED",
+            "-D__unix__",
+            "-D__unix",
+            "-D__ELF__",
+            "-D__LITTLEENDIAN__",
+        ];
+
+        // Version-specific compiler defines for QNX
+        match target_env.as_str() {
+            "nto71" => {
+                compiler_args.push("-D__QNX__");
+                compiler_args.push("-D__GNUC__=8");
+                compiler_args.push("-D__GNUC_MINOR__=3");
+                compiler_args.push("-D__GNUC_PATCHLEVEL__=0");
+            }
+            "nto80" => {
+                compiler_args.push("-D__QNX__=800");
+                compiler_args.push("-D__GNUC__=12");
+                compiler_args.push("-D__GNUC_MINOR__=2");
+                compiler_args.push("-D__GNUC_PATCHLEVEL__=0");
+            }
+            _ => {
+                panic!(
+                    "Unsupported QNX target environment: {}. Only nto71 and nto80 are supported.",
+                    target_env
+                );
+            }
         }
-    };
+
+        // Architecture-specific compiler defines for QNX
+        if target_arch == "x86_64" {
+            compiler_args.push("-D__X86_64__");
+        }
+
+        for arg in &compiler_args {
+            builder = builder.clang_arg(*arg);
+        }
+
+        if let Ok(sysroot) = env::var("QNX_TARGET") {
+            builder = builder.clang_arg(&format!("--sysroot={}", sysroot));
+            builder = builder.clang_arg(&format!("-I{}/usr/include", sysroot));
+            builder = builder.clang_arg(&format!("-I{}/usr/include/c++/v1", sysroot));
+        } else {
+            println!("cargo:warning=QNX_TARGET environment variable not set for QNX build");
+        }
+    }
+
+    let bindings = builder.generate().expect("Unable to generate bindings");
 
     // needed for bazel but can be empty for cargo builds
     println!("cargo:rustc-env=BAZEL_BINDGEN_PATH_CORRECTION=");

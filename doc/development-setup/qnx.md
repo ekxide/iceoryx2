@@ -47,7 +47,9 @@ mkqnximage --help
 
 The following image configuration was used for development of the platform abstraction for QNX:
 
-#### QNX 7.1
+#### x86_64
+
+##### QNX 7.1
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
@@ -72,7 +74,7 @@ mkqnximage \
     --data-inodes=24000
 ```
 
-#### QNX 8.0
+##### QNX 8.0
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx800"
@@ -100,9 +102,10 @@ mkqnximage \
 ### Run a QNX image on QEMU
 
 Images build with `mkqnximage` can be run using the `--run` option.
-Alternatively, use QEMU directly for more fine-grained control over the emulation.
 
-#### QNX 7.1
+#### x86_64
+
+##### QNX 7.1
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
@@ -114,19 +117,7 @@ cd $IMAGE_DIR
 mkqnximage --run
 ```
 
-#### QNX 8.0
-
-```bash
-export QNX_TOOLCHAIN="$HOME/qnx800"
-source $QNX_TOOLCHAIN/qnxsdp-env.sh
-
-export IMAGE_DIR="$HOME/images/minimal"
-cd $IMAGE_DIR
-
-mkqnximage --run
-```
-
-#### QNX 7.1
+Alternatively, use QEMU directly for more fine-grained control over the emulation:
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
@@ -154,7 +145,19 @@ qemu-system-x86_64 \
   -device virtio-rng-pci,rng=rng0
 ```
 
-#### QNX 8.0
+##### QNX 8.0
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx800"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+export IMAGE_DIR="$HOME/images/minimal"
+cd $IMAGE_DIR
+
+mkqnximage --run
+```
+
+Alternatively, use QEMU directly for more fine-grained control over the emulation:
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx800"
@@ -270,11 +273,7 @@ Use the custom-built compiler to build for QNX targets:
 export QNX_TOOLCHAIN="$HOME/qnx710"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
-export COMPILER_DEFINES="-D__QNX__ -D__QNXNTO__ -D__GNUC__=8 -D__GNUC_MINOR__=3 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__ "
-export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
-
-cargo +qnx-custom build --target x87_64-pc-nto-qnx710 --package iceoryx2
+cargo +qnx-custom build --target x86_64-pc-nto-qnx710 --package iceoryx2
 ```
 
 ##### QNX 8.0
@@ -283,11 +282,7 @@ cargo +qnx-custom build --target x87_64-pc-nto-qnx710 --package iceoryx2
 export QNX_TOOLCHAIN=$HOME/qnx800
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
-export COMPILER_DEFINES="-D__QNX__=800 -D__QNXNTO__ -D__GNUC__=12 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__"
-export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
-
-cargo +qnx-custom build --target x86_64-pc-nto-qnx800 --package iceoryx2-pal-posix
+cargo +qnx-custom build --target x86_64-pc-nto-qnx800 --package iceoryx2
 ```
 
 #### Aarch64
@@ -298,11 +293,7 @@ cargo +qnx-custom build --target x86_64-pc-nto-qnx800 --package iceoryx2-pal-pos
 export QNX_TOOLCHAIN="$HOME/qnx710"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
-export COMPILER_DEFINES="-D__QNX__ -D__QNXNTO__ -D__GNUC__=8 -D__GNUC_MINOR__=3 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__LITTLEENDIAN__ "
-export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
-
-cargo +qnx-custom build --target x87_64-pc-nto-qnx710 --package iceoryx2
+cargo +qnx-custom build --target aarch64-unknown-nto-qnx710 --package iceoryx2
 ```
 
 ##### QNX 8.0
@@ -311,11 +302,7 @@ cargo +qnx-custom build --target x87_64-pc-nto-qnx710 --package iceoryx2
 export QNX_TOOLCHAIN=$HOME/qnx800
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
 
-export COMPILER_DEFINES="-D__QNX__=800 -D__QNXNTO__ -D__GNUC__=12 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__LITTLEENDIAN__ "
-export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
-
-cargo +qnx8-custom build --target aarch64-unknown-nto-qnx800 --package iceoryx2-pal-posix
+cargo +qnx8-custom build --target aarch64-unknown-nto-qnx800 --package iceoryx2
 ```
 
 ### Remote Debugging with GDB
@@ -331,7 +318,9 @@ pdebug 1234
 
 Then on the development host, connect to the target via `gdb`:
 
-#### QNX 7.1
+#### x86_64
+
+##### QNX 7.1
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
@@ -344,7 +333,7 @@ upload path/to/binary data/home/root/binary
 run
 ```
 
-#### QNX 8.0
+##### QNX 8.0
 
 ```bash
 export QNX_TOOLCHAIN=$HOME/qnx800
@@ -359,17 +348,15 @@ run
 
 ### Running Benchmarks
 
-#### QNX 7.1
+#### x86_64
+
+##### QNX 7.1
 
 First build the benchmarks:
 
 ```bash
 export QNX_TOOLCHAIN="$HOME/qnx710"
 source $QNX_TOOLCHAIN/qnxsdp-env.sh
-
-export COMPILER_DEFINES="-D__QNX__ -D__QNXNTO__ -D__GNUC__=8 -D__GNUC_MINOR__=3 -D__GNUC_PATCHLEVEL__=0 -D__NO_INLINE__ -D__DEPRECATED -D__unix__ -D__unix -D__ELF__ -D__X86_64__ -D__LITTLEENDIAN__ "
-export COMPILER_INCLUDES="$QNX_TARGET/usr/include:$QNX_TARGET/usr/include/c++/v1"
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$QNX_TARGET -I$COMPILER_INCLUDES $COMPILER_DEFINES"
 
 cargo +qnx-custom build --target x86_64-pc-nto-qnx710 --package benchmark-publish-subscribe --package benchmark-event --package benchmark-request-response
 ```
