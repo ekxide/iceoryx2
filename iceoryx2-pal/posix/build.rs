@@ -91,7 +91,7 @@ fn main() {
             builder = builder.clang_arg(&format!("-I{}/usr/include", sysroot));
             builder = builder.clang_arg(&format!("-I{}/usr/include/c++/v1", sysroot));
         } else {
-            println!("cargo:warning=QNX_TARGET environment variable not set for QNX build");
+            panic!("QNX_TARGET environment variable not set for QNX build")
         }
     }
 

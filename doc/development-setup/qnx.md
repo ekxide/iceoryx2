@@ -372,10 +372,10 @@ Then uploading the binaries:
 ```sh
 ntox86_64-gdb
 target qnx 172.31.1.11:1234 # If using same image as above
-upload target/x86_64-pc-nto-qnx710/release/benchmark-publish-subscribe data/home/root/benchmark-publish-subscribe
-upload target/x86_64-pc-nto-qnx710/release/benchmark-event data/home/root/benchmark-event
-upload target/x86_64-pc-nto-qnx710/release/benchmark-request-response data/home/root/benchmark-request-response
-upload target/x86_64-pc-nto-qnx710/release/benchmark-queue data/home/root/benchmark-queue
+upload target/x86_64-pc-nto-qnx710/release/benchmark-publish-subscribe /data/home/root/benchmark-publish-subscribe
+upload target/x86_64-pc-nto-qnx710/release/benchmark-event /data/home/root/benchmark-event
+upload target/x86_64-pc-nto-qnx710/release/benchmark-request-response /data/home/root/benchmark-request-response
+upload target/x86_64-pc-nto-qnx710/release/benchmark-queue /data/home/root/benchmark-queue
 ```
 
 The benchmarks can then be executed from the target:
