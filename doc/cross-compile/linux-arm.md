@@ -66,7 +66,7 @@ located within the cloned repo, just use an absolute path for your system
 
 ```bash
 cmake -S examples/c/publish_subscribe \
-  -B target/out-of-tree/examples/c/publish_subscribe \
+  -B target/ff/out-of-tree/examples/c/publish_subscribe \
   -DCMAKE_TOOLCHAIN_FILE="/full/path/to/.../cross-example.cmake" \
   -DCMAKE_PREFIX_PATH="/full/path/to/.../iceoryx2/target/ff/cc/install" \
   -Diceoryx2-c_DIR="/full/path/to/.../iceoryx2/target/ff/cc/install/lib/cmake/iceoryx2-c" \
@@ -74,7 +74,7 @@ cmake -S examples/c/publish_subscribe \
 ```
 
 ```bash
-cmake --build target/out-of-tree/examples/c/publish_subscribe
+cmake --build target/ff/out-of-tree/examples/c/publish_subscribe
 ```
 
-Your example binaries should be in `...target/out-of-tree/examples/c/publish_subscribe`
+Your example binaries should be in `...target/ff/out-of-tree/examples/c/publish_subscribe`
