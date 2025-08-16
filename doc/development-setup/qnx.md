@@ -37,6 +37,11 @@ qnx800
 
 ### Create a QNX image for QEMU
 
+> [!TIP]
+> A convenience script is available for making QNX images for QEMU.
+>
+> See: `internal/scripts/qnx_make_qemu_image.sh --help`
+
 The [`mkqnximage`](https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.utilities/topic/m/mkqnximage.html)
 CLI can be used to create a QNX image for development. See the `--help` for available
 configuration options:
@@ -68,6 +73,8 @@ mkqnximage \
     --type=qemu \
     --arch=x86_64 \
     --ip="$VM_IPV4_ADDR" \
+    --telnet=yes \
+    --sshd-pregen=yes \
     --sys-size=256 \
     --sys-inodes=24000 \
     --data-size=256 \
@@ -100,6 +107,11 @@ mkqnximage \
 ```
 
 ### Run a QNX image on QEMU
+
+> [!TIP]
+> A convenience script is available for running pre-built images.
+>
+> See: `internal/scripts/qnx_run_qemu_image.sh --help`
 
 Images build with `mkqnximage` can be run using the `--run` option.
 
@@ -185,7 +197,21 @@ qemu-system-x86_64 \
   -device virtio-rng-pci,rng=rng0
 ```
 
-### Build the Rust compiler for QNX
+### Connect to the QNX via telnet
+
+`telnet` can be used to connect to a running image with default credentials (root/root):
+
+```
+export VM_IPV4_ADDR="172.31.1.11" # Or whatever address you have chosen
+telnet $VM_IPV4_ADDR
+```
+
+### Build the Rust toolchain for QNX
+
+> [!TIP]
+> A convenience script is available for building the Rust toolchain.
+>
+> See: `internal/scripts/qnx_build_rust_toolchain.sh --help`
 
 In order to build Rust applications for QNX targets, a custom-built Rust compiler is required
 due to the dependence on the QNX toolchain.
@@ -258,6 +284,48 @@ export build_env='
 rustup toolchain link qnx-custom $RUSTDIR/build/host/stage1
 ```
 
+### Build remote testing tools for QNX
+
+> [!TIP]
+> A convenience script is available for building the remote testing utilities.
+>
+> See: `internal/scripts/qnx_build_rust_toolchain.sh --help`
+
+This is a TCP server that allows for transfering and running test binaries on the QNX image on
+QEMU.
+
+#### QNX 7.1
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx710"
+source ${QNX_TOOLCHAIN}/qnxsdp-env.sh
+
+export IMAGE_DIR="$HOME/images/minimal"
+export SHARED_DIR="${IMAGE_DIR}/shared"
+
+export RUSTDIR="$HOME/source/rust"
+cd $RUSTDIR
+
+export build_env='
+    CC_x86_64_pc_nto_qnx710=qcc
+    CFLAGS_x86_64_pc_nto_qnx710=-Vgcc_ntox86_64_cxx
+    CXX_x86_64_pc_nto_qnx710=qcc
+    AR_x86_64_pc_nto_qnx710=ntox86_64-ar
+    CC_aarch64_unknown_nto_qnx710=qcc
+    CFLAGS_aarch64_unknown_nto_qnx710=-Vgcc_ntoaarch64le_cxx
+    CXX_aarch64_unknown_nto_qnx710=qcc
+    AR_aarch64_unknown_nto_qnx710=ntoaarch64-ar
+    '
+# Cross-compile the server for QNX
+./x build src/tools/remote-test-server --target "x86_64-pc-nto-qnx710"
+
+# Transfer the client to the shared directory to be mounted to the VM
+cp $RUSTDIR/build/host/stage1-tools/x86_64-pc-nto-qnx710/release/remote-test-server $SHARED_DIR
+
+# Then compile the client for the host
+./x build src/tools/remote-test-client
+```
+
 ### Build `iceoryx2` for QNX
 
 > [!WARNING]
@@ -305,9 +373,93 @@ source $QNX_TOOLCHAIN/qnxsdp-env.sh
 cargo +qnx8-custom build --target aarch64-unknown-nto-qnx800 --package iceoryx2
 ```
 
+### Run the `iceoryx2` test suite on QNX
+
+> [!TIP]
+> A convenience script is available for building and running tests on a remote target.
+> The `remote-test-server` will still need to be started on the target manually.
+>
+> See: `internal/scripts/remote_run_test_suite.sh --help`
+
+#### x86_64
+
+##### QNX 7.1
+
+The tests can be built in a similar way to the library:
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx710"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+cargo +qnx-custom build --target x86_64-pc-nto-qnx710 --package iceoryx2 --tests
+```
+
+In order to execute the tests on the emulated target, first start the `remote-test-server` from
+within the VM:
+
+```bash
+mount -t dos /dev/hd1t6 /mnt/shared
+cp /mnt/shared/remote-test-server-x86_64 /data/home/root/
+chmod +x /data/home/root/remote-test-server-x86_64
+RUST_TEST_THREADS=1 ./remote-test-server-x86_64 -v --bind 0.0.0.0:12345 --sequential
+```
+
+Then the tests can be executed using the `remote-test-client` from the host:
+
+```bash
+export VM_IPV4_ADDR="172.31.1.11"
+export TEST_DEVICE_ADDR=$VM_IPV4_ADDR:12345
+
+export RUSTDIR="$HOME/source/rust"
+$RUSTDIR/build/host/stage0-tools-bin/remote-test-client run 0 <test_binary>
+```
+
+### Running Benchmarks
+
+> [!TIP]
+> A convenience script is available for building and running benchmarks on a remote target.
+> The `remote-test-server` will still need to be started on the target manually.
+>
+> See: `internal/scripts/remote_run_benchmarks.sh --help`
+
+
+#### x86_64
+
+##### QNX 7.1
+
+First build the benchmarks:
+
+```bash
+export QNX_TOOLCHAIN="$HOME/qnx710"
+source $QNX_TOOLCHAIN/qnxsdp-env.sh
+
+cargo +qnx-custom build --release --target x86_64-pc-nto-qnx710 --package benchmark-publish-subscribe --package benchmark-event --package benchmark-request-response --package benchmark-queue
+```
+
+In order to execute the benchmarks on the emulated target, first start the `remote-test-server` from
+within the VM:
+
+```bash
+mount -t dos /dev/hd1t6 /mnt/shared
+cp /mnt/shared/remote-test-server-x86_64 /data/home/root/
+chmod +x /data/home/root/remote-test-server-x86_64
+RUST_TEST_THREADS=1 ./remote-test-server-x86_64 -v --bind 0.0.0.0:12345 --sequential
+```
+
+
+Then the benchmarks can be executed using the `remote-test-client` from the host:
+
+```bash
+export VM_IPV4_ADDR="172.31.1.11"
+export TEST_DEVICE_ADDR=$VM_IPV4_ADDR:12345
+
+export RUSTDIR="$HOME/source/rust"
+$RUSTDIR/build/host/stage0-tools-bin/remote-test-client run 0 <benchmark_binary>
+```
+
 ### Remote Debugging with GDB
 
-The GNU debugger `gdb` can be used to transfer binaries to QNX running on QEMU.
+The GNU debugger `gdb` can be used to transfer binaries to QNX running on QEMU and debug them.
 
 First, start the [remote debug agent](https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.user_guide/topic/security_pdebug.html?hl=pdebug)
 in the QNX VM:
@@ -344,47 +496,4 @@ file path/to/binary
 target qnx 172.31.1.11:1234 # If using same image as above
 upload path/to/binary data/home/root/binary
 run
-```
-
-### Running Benchmarks
-
-#### x86_64
-
-##### QNX 7.1
-
-First build the benchmarks:
-
-```bash
-export QNX_TOOLCHAIN="$HOME/qnx710"
-source $QNX_TOOLCHAIN/qnxsdp-env.sh
-
-cargo +qnx-custom build --release --target x86_64-pc-nto-qnx710 --package benchmark-publish-subscribe --package benchmark-event --package benchmark-request-response --package benchmark-queue
-```
-
-Then transfer the binaries to the target e.g. via `gdb` by first starting `pdebug`:
-
-```sh
-pdebug 1234
-```
-
-Then uploading the binaries:
-
-```sh
-ntox86_64-gdb
-target qnx 172.31.1.11:1234 # If using same image as above
-upload target/x86_64-pc-nto-qnx710/release/benchmark-publish-subscribe /data/home/root/benchmark-publish-subscribe
-upload target/x86_64-pc-nto-qnx710/release/benchmark-event /data/home/root/benchmark-event
-upload target/x86_64-pc-nto-qnx710/release/benchmark-request-response /data/home/root/benchmark-request-response
-upload target/x86_64-pc-nto-qnx710/release/benchmark-queue /data/home/root/benchmark-queue
-```
-
-The benchmarks can then be executed from the target:
-
-```sh
-cd /data/home/root
-
-./benchmark-publish-subscribe --bench-all --iterations 1000000
-./benchmark-event --bench-all --iterations 1000
-./benchmark-request-response --iterations 1000000
-./benchmark-queue --iterations 1000000
 ```
