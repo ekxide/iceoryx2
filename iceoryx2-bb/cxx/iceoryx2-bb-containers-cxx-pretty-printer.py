@@ -25,10 +25,15 @@ class OptionalPrinter:
         if is_empty:
             return f"{{ empty Optional<{self.contained_type}> }}"
         else:
-            return f"{{ value = {self.val['m_value']['m_u_value']} }}"
+            # the type of the nested value is determined as remove_cv_ref_t,
+            # which is not pretty-printed. we need to jump through a few hoops
+            # to get the correct nested type to enable pretty printing of the
+            # contained value
+            nested_type = self.val['m_value']['m_u_value'].type.strip_typedefs()
+            return f"{{value = {self.val['m_value']['m_u_value'].cast(nested_type)}}}"
 
 def iox2_bb_containers_cxx(val):
-    iox2_bb_containers_cxx.rx_optional = re.compile("^iox2::container::Optional<(.*)>$")
+    iox2_bb_containers_cxx.rx_optional = re.compile("^(?:const )?iox2::container::Optional<(.*)>$")
     if (match := iox2_bb_containers_cxx.rx_optional.match(str(val.type))) is not None:
         return OptionalPrinter(val, contained_type=match[1])
     else:
