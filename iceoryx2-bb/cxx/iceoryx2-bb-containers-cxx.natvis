@@ -11,4 +11,27 @@
     </Expand>
   </Type>
 
+  <Type Name="iox2::container::detail::RawByteStorage&lt;*&gt;">
+    <DisplayString>{{ size={m_size} }}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <IndexListItems>
+        <Size>$T2</Size>
+        <ValueNode Condition="$i &lt; m_size">(($T1*)m_bytes)[$i]</ValueNode>
+        <ValueNode Condition="$i &gt;= m_size">nullptr</ValueNode>
+      </IndexListItems>
+    </Expand>
+  </Type>
+
+  <Type Name="iox2::container::StaticVector&lt;*&gt;">
+    <DisplayString>{{ size={m_storage.m_size} }}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">(uint64_t)$T2</Item>
+      <Item Name="[size]">m_storage.m_size</Item>
+      <ArrayItems>
+        <Size>m_storage.m_size</Size>
+        <ValuePointer>($T1*)m_storage.m_bytes</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
 </AutoVisualizer>
