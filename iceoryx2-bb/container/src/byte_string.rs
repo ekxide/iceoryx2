@@ -37,6 +37,7 @@ use core::{
     ops::{Deref, DerefMut},
 };
 
+// Just some change in source code
 use iceoryx2_bb_derive_macros::{PlacementDefault, ZeroCopySend};
 use iceoryx2_bb_elementary_traits::placement_default::PlacementDefault;
 use iceoryx2_bb_elementary_traits::zero_copy_send::ZeroCopySend;
