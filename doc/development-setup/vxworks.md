@@ -95,7 +95,7 @@ When starting with a new bash shell, the `sdkenv.sh` file needs to be sourced
 first.
 
 ```bash
-source /opt/ekxide/wrsdk-vxworks7-qemu-25-03/sdkenv.sh
+source /opt/vxworks/wrsdk-vxworks7-qemu-25-03/sdkenv.sh
 ```
 
 ### Build the Rust Crates
