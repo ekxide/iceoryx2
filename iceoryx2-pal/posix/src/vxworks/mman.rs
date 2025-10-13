@@ -60,7 +60,7 @@ unsafe fn shm_file_path(name: *const c_char, suffix: &[u8]) -> [u8; MAX_PATH_LEN
         let c = *(name.add(i) as *const u8);
 
         state_file_path[i + SHM_STATE_DIRECTORY.len()] = if c == b'/' { b'\\' } else { c };
-        if *(name.add(i)) == 0i8 {
+        if *(name.add(i)) == 0 {
             name_len = i;
             break;
         }
@@ -148,7 +148,7 @@ pub unsafe fn mprotect(addr: *mut void, len: size_t, prot: int) -> int {
     libc::mprotect(addr, len, prot)
 }
 
-unsafe fn trim_ascii(value: &[i8]) -> &[u8] {
+unsafe fn trim_ascii(value: &[c_char]) -> &[u8] {
     let length = value.iter().position(|&c| c == 0).unwrap_or(value.len());
     core::slice::from_raw_parts(value.as_ptr().cast(), length)
 }
@@ -182,7 +182,7 @@ pub unsafe fn shm_list() -> Vec<[i8; 256]> {
                         break;
                     }
 
-                    *letter = (*entry).d_name[i];
+                    *letter = (*entry).d_name[i] as _;
                 }
 
                 result.push(shm_name);
