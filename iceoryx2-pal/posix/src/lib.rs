@@ -23,6 +23,9 @@ mod common;
 #[path = "libc/mod.rs"]
 mod platform;
 
+#[cfg(all(target_os = "android", not(feature = "libc_platform")))]
+#[path = "android/mod.rs"]
+pub mod platform;
 #[cfg(all(target_os = "freebsd", not(feature = "libc_platform")))]
 #[path = "freebsd/mod.rs"]
 mod platform;
@@ -39,7 +42,7 @@ mod platform;
 #[path = "windows/mod.rs"]
 mod platform;
 
-#[cfg(not(feature = "libc_platform"))]
+#[cfg(not(any(target_os = "android", feature = "libc_platform")))]
 pub(crate) mod internal {
     #![allow(non_upper_case_globals)]
     #![allow(non_camel_case_types)]
@@ -58,7 +61,7 @@ pub(crate) mod internal {
     pub const ESUCCES: u32 = 0;
 }
 
-#[cfg(feature = "libc_platform")]
+#[cfg(any(target_os = "android", feature = "libc_platform"))]
 pub(crate) mod internal {
     pub use libc::*;
 }
