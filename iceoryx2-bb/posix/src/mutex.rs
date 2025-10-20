@@ -350,27 +350,29 @@ impl MutexBuilder {
                 "{} due to a failure while setting the mutex type in mutex attributes.", msg);
         }
 
-        if unsafe {
-            posix::pthread_mutexattr_setprotocol(
-                mutex_attributes.get_mut(),
-                posix::PTHREAD_PRIO_NONE,
-            )
-        } != 0
-        {
-            fail!(from self, with MutexCreationError::UnableToSetProtocol,
-                "{} due to a failure while setting the mutex protocol in mutex attributes.", msg);
-        }
+        // FIXME
+        // if unsafe {
+        //     posix::pthread_mutexattr_setprotocol(
+        //         mutex_attributes.get_mut(),
+        //         posix::PTHREAD_PRIO_NONE,
+        //     )
+        // } != 0
+        // {
+        //     fail!(from self, with MutexCreationError::UnableToSetProtocol,
+        //         "{} due to a failure while setting the mutex protocol in mutex attributes.", msg);
+        // }
 
-        if unsafe {
-            posix::pthread_mutexattr_setrobust(
-                mutex_attributes.get_mut(),
-                self.thread_termination_behavior as i32,
-            )
-        } != 0
-        {
-            fail!(from self, with MutexCreationError::UnableToSetThreadTerminationBehavior,
-                "{} due to a failure while setting the mutex thread termination behavior in mutex attributes.", msg);
-        }
+        // FIXME
+        // if unsafe {
+        //     posix::pthread_mutexattr_setrobust(
+        //         mutex_attributes.get_mut(),
+        //         self.thread_termination_behavior as i32,
+        //     )
+        // } != 0
+        // {
+        //     fail!(from self, with MutexCreationError::UnableToSetThreadTerminationBehavior,
+        //         "{} due to a failure while setting the mutex thread termination behavior in mutex attributes.", msg);
+        // }
 
         match unsafe { posix::pthread_mutex_init(mutex, mutex_attributes.get()) }.into() {
             Errno::ESUCCES => (),
