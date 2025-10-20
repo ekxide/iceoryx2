@@ -23,7 +23,7 @@ const CYCLE_TIME: Duration = Duration::from_secs(1);
 
 fn main() -> Result<(), Box<dyn core::error::Error>> {
     set_log_level_from_env_or(LogLevel::Info);
-    let node = NodeBuilder::new().create::<ipc::Service>()?;
+    let node = NodeBuilder::new().create::<local::Service>()?;
 
     let service = node
         .service_builder(&"My/Funk/ServiceName".try_into()?)
@@ -31,6 +31,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
         .open_or_create()?;
 
     let publisher = service.publisher_builder().create()?;
+    let subscriber = service.subscriber_builder().create()?;
 
     let mut counter: u64 = 0;
 
@@ -47,6 +48,10 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
         sample.send()?;
 
         cout!("Send sample {counter} ...");
+
+        while let Some(sample) = subscriber.receive()? {
+            cout!("received: {:?}", *sample);
+        }
     }
 
     cout!("exit");
