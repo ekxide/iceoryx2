@@ -16,26 +16,36 @@ use crate::posix::types::*;
 
 use std::sync::Mutex;
 
+use super::Errno;
+
 pub unsafe fn getpwnam_r(
-    name: *const c_char,
-    pwd: *mut passwd,
-    buf: *mut c_char,
-    buflen: size_t,
-    result: *mut *mut passwd,
+    _name: *const c_char,
+    _pwd: *mut passwd,
+    _buf: *mut c_char,
+    _buflen: size_t,
+    _result: *mut *mut passwd,
 ) -> int {
     // NOTE getpwnam_r return ENOSYS and reimplementing it with getpwnam does also not work since it also returns ENOSYS
-    internal::getpwnam_r(name, pwd, buf, buflen, result)
+    // internal::getpwnam_r(name, pwd, buf, buflen, result)
+
+    // NOTE on ARM the the function does not exist and there is a linker error
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn getpwuid_r(
-    uid: uid_t,
-    pwd: *mut passwd,
-    buf: *mut c_char,
-    buflen: size_t,
-    result: *mut *mut passwd,
+    _uid: uid_t,
+    _pwd: *mut passwd,
+    _buf: *mut c_char,
+    _buflen: size_t,
+    _result: *mut *mut passwd,
 ) -> int {
     // NOTE getpwuid_r return ENOSYS and reimplementing it with getpwuid does also not work since it also returns ENOSYS
-    internal::getpwuid_r(uid, pwd, buf, buflen, result)
+    // internal::getpwuid_r(uid, pwd, buf, buflen, result)
+
+    // NOTE on ARM the the function does not exist and there is a linker error
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 struct GetGrWorkaround {}
@@ -126,21 +136,21 @@ mod internal {
     use super::*;
 
     extern "C" {
-        pub(super) fn getpwnam_r(
-            name: *const c_char,
-            pwd: *mut passwd,
-            buf: *mut c_char,
-            buflen: size_t,
-            result: *mut *mut passwd,
-        ) -> int;
+        // pub(super) fn getpwnam_r(
+        //     name: *const c_char,
+        //     pwd: *mut passwd,
+        //     buf: *mut c_char,
+        //     buflen: size_t,
+        //     result: *mut *mut passwd,
+        // ) -> int;
 
-        pub(super) fn getpwuid_r(
-            uid: uid_t,
-            pwd: *mut passwd,
-            buf: *mut c_char,
-            buflen: size_t,
-            result: *mut *mut passwd,
-        ) -> int;
+        // pub(super) fn getpwuid_r(
+        //     uid: uid_t,
+        //     pwd: *mut passwd,
+        //     buf: *mut c_char,
+        //     buflen: size_t,
+        //     result: *mut *mut passwd,
+        // ) -> int;
 
         pub(super) fn getgrnam(name: *const c_char) -> *mut group;
 
