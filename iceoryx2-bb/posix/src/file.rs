@@ -541,6 +541,7 @@ pub struct File {
 
 impl Drop for File {
     fn drop(&mut self) {
+        trace!(from self, "closed");
         if self.has_ownership {
             match &self.path {
                 None => {

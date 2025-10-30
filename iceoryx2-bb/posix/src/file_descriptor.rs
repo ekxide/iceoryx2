@@ -76,7 +76,7 @@ use crate::metadata::Metadata;
 use crate::ownership::*;
 use crate::permission::{Permission, PermissionExt};
 use crate::user::Uid;
-use iceoryx2_bb_log::{error, fail, fatal_panic};
+use iceoryx2_bb_log::{error, fail, fatal_panic, trace};
 use iceoryx2_pal_posix::posix::errno::Errno;
 use iceoryx2_pal_posix::*;
 
@@ -221,6 +221,7 @@ impl FileDescriptor {
 impl Drop for FileDescriptor {
     fn drop(&mut self) {
         if self.is_owned {
+            trace!(from self, "close");
             self.close()
         }
     }
