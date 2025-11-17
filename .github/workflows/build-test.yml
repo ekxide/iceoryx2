@@ -797,3 +797,29 @@ jobs:
     steps:
       - name: Mandatory Checks Sync
         run: echo "Sync point for collecting mandatory checks that need to pass for Pull-Requests"
+
+  comment-on-failed-job:
+    needs:
+      [
+        static-code-analysis,
+        x86_64,
+        x86_64_bazel,
+        x86_32,
+        python-bindings,
+        end-to-end-tests,
+      ]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Add comment for successful run
+        run: gh issue comment "$NUMBER" --body "$BODY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_URL: ${{ github.server_url }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          NUMBER: 4
+          BODY: >
+            The Pull-Request workflow has successfuly passed.
+            Link to the workflow $GH_URL/$GH_REPO/actions/runs/$RUN_ID
+            :sparkles: Thanks for your patience! :sparkles:
