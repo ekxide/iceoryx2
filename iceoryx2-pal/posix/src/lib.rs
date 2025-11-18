@@ -23,18 +23,43 @@ mod common;
 #[path = "libc/mod.rs"]
 mod platform;
 
+#[cfg(feature = "custom_pal_posix")]
+pub(crate) mod internal {
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(non_snake_case)]
+    #![allow(unused)]
+    #![allow(improper_ctypes)]
+    #![allow(unknown_lints)]
+    #![allow(unnecessary_transmutes)]
+    #![allow(clippy::all)]
+    include!(concat!(
+        env!("IOX2_CUSTOM_PAL_POSIX_PATH"),
+        "/iceoryx2_pal_posix.rs"
+    ));
+}
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "freebsd", not(feature = "libc_platform")))]
 #[path = "freebsd/mod.rs"]
 mod platform;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "macos", not(feature = "libc_platform")))]
 #[path = "macos/mod.rs"]
 mod platform;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "linux", not(feature = "libc_platform")))]
 #[path = "linux/mod.rs"]
 pub mod platform;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "nto", not(feature = "libc_platform")))]
 #[path = "qnx/mod.rs"]
 mod platform;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "windows", not(feature = "libc_platform")))]
 #[path = "windows/mod.rs"]
 mod platform;
