@@ -44,6 +44,9 @@ fn main() {
         let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
         let target_env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap();
 
+        // NOTE: needs to live as long as compiler_args
+        let target_triple_flag: String;
+
         // Common compiler defines for QNX
         let mut compiler_args = vec![
             "-D__QNXNTO__",
@@ -64,6 +67,9 @@ fn main() {
                 compiler_args.push("-D__GNUC_PATCHLEVEL__=0");
             }
             "nto80" => {
+                let target_triple = std::env::var("TARGET").unwrap().replace("qnx800", "800");
+                target_triple_flag = format!("--target={}", target_triple);
+                compiler_args.push(&target_triple_flag);
                 compiler_args.push("-D__QNX__=800");
                 compiler_args.push("-D__GNUC__=12");
                 compiler_args.push("-D__GNUC_MINOR__=2");
