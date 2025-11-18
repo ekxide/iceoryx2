@@ -24,7 +24,7 @@ mod common;
 mod platform;
 
 #[cfg(feature = "custom_pal_posix")]
-pub(crate) mod internal {
+mod iceoryx2_pal_posix {
     #![allow(non_upper_case_globals)]
     #![allow(non_camel_case_types)]
     #![allow(non_snake_case)]
@@ -41,28 +41,28 @@ pub(crate) mod internal {
 
 #[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "freebsd", not(feature = "libc_platform")))]
-#[path = "freebsd/mod.rs"]
-mod platform;
+#[path = "freebsd/iceoryx2_pal_posix.rs"]
+mod iceoryx2_pal_posix;
 
 #[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "macos", not(feature = "libc_platform")))]
-#[path = "macos/mod.rs"]
-mod platform;
+#[path = "macos/iceoryx2_pal_posix.rs"]
+mod iceoryx2_pal_posix;
 
 #[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "linux", not(feature = "libc_platform")))]
-#[path = "linux/mod.rs"]
-pub mod platform;
+#[path = "linux/iceoryx2_pal_posix.rs"]
+mod iceoryx2_pal_posix;
 
 #[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "nto", not(feature = "libc_platform")))]
-#[path = "qnx/mod.rs"]
-mod platform;
+#[path = "qnx/iceoryx2_pal_posix.rs"]
+mod iceoryx2_pal_posix;
 
 #[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "windows", not(feature = "libc_platform")))]
-#[path = "windows/mod.rs"]
-mod platform;
+#[path = "windows/iceoryx2_pal_posix.rs"]
+mod iceoryx2_pal_posix;
 
 #[cfg(not(feature = "libc_platform"))]
 pub(crate) mod internal {
@@ -99,5 +99,5 @@ pub mod posix {
     #[allow(unused_imports)]
     pub(crate) use common::string_operations::*;
 
-    pub use crate::platform::*;
+    pub use crate::iceoryx2_pal_posix::platform::*;
 }
