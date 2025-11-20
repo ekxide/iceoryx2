@@ -263,3 +263,58 @@ For Bazel the equivalent build command is:
 ```cli
 bazel build //... --action_env=IOX2_CUSTOM_PAL_CONFIG_PATH=/my/funky/platform --//:custom_pal_config="on"
 ```
+
+## Custom Platform Abstraction Layer Posix
+
+Similar to the PAL configuration users may want to use an own
+Posix abstraction (iceoryx2/iceoryx2-pal/posix/src) for a
+specific platform.
+
+To achieve this we can use the environment variable
+`IOX2_CUSTOM_PAL_POSIX_PATH` together with the
+feature flag `custom_pal_posix`.
+
+The first step is to create a posix platform folder
+(can be outside of iceoryx2).
+For this excample we use `/my/funky/platform/posix`
+The easiest is to copy an existing posix platform
+and adapt it to the specific needs.
+
+Inside of the posix folder is a file called
+`iceoryx2_pal_posix.rs` located that is loading
+`platform` mod.
+To make the custom posix platform discoverable
+we need to adapt the path to mod.rs:
+
+```rust
+#[cfg(all(target_os = "windows", not(feature = "libc_platform")))]
+#[path = "/my/funky/platform/posix/mod.rs"]
+pub mod platform;
+```
+
+The `path` attribute needs to contain the absolute path to the mod.rs
+of the custom posix platform.
+Optionally a `#[cfg()]` attribute can be added for selecting
+the target operating system.
+
+Once this is done the build steps follow:
+
+1. Set environment variable with absolute path to `iceoryx2_pal_posix.rs`
+(no trailing slash)
+
+```cli
+export IOX2_CUSTOM_PAL_CONFIG_PATH=/my/funky/platform/posix
+```
+
+1. Build iceoryx2 with feature `custom_pal_posix`
+for custom posix platform abstraction.
+
+```cli
+cargo build --features "custom_pal_posix"
+```
+
+For Bazel the equivalent build command is:
+
+```cli
+bazel build //... --action_env=IOX2_CUSTOM_PAL_POSIX_PATH=/my/funky/platform/posix --//:custom_pal_posix="on"
+```
