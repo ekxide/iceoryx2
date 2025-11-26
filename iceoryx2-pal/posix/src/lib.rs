@@ -19,28 +19,55 @@ extern crate alloc;
 
 mod common;
 
-#[cfg(all(target_os = "linux", feature = "libc_platform"))]
-#[path = "libc/mod.rs"]
-mod platform;
+#[cfg(feature = "custom_pal_posix")]
+mod iox2_pal_posix {
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(non_snake_case)]
+    #![allow(unused)]
+    #![allow(improper_ctypes)]
+    #![allow(unknown_lints)]
+    #![allow(unnecessary_transmutes)]
+    #![allow(clippy::all)]
+    include!(concat!(
+        env!("IOX2_CUSTOM_PAL_POSIX_PATH"),
+        "/iox2_pal_posix.rs"
+    ));
+}
 
+#[cfg(all(target_os = "linux", feature = "libc_platform"))]
+#[path = "libc/iox2_pal_posix.rs"]
+mod iox2_pal_posix;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(target_os = "android")]
-#[path = "android/mod.rs"]
-pub mod platform;
+#[path = "android/iox2_pal_posix.rs"]
+mod iox2_pal_posix;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(target_os = "freebsd")]
-#[path = "freebsd/mod.rs"]
-mod platform;
+#[path = "freebsd/iox2_pal_posix.rs"]
+mod iox2_pal_posix;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(target_os = "macos")]
-#[path = "macos/mod.rs"]
-mod platform;
+#[path = "macos/iox2_pal_posix.rs"]
+mod iox2_pal_posix;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(all(target_os = "linux", not(feature = "libc_platform")))]
-#[path = "linux/mod.rs"]
-pub mod platform;
+#[path = "linux/iox2_pal_posix.rs"]
+pub mod iox2_pal_posix;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(target_os = "nto")]
-#[path = "qnx/mod.rs"]
-mod platform;
+#[path = "qnx/iox2_pal_posix.rs"]
+mod iox2_pal_posix;
+
+#[cfg(not(feature = "custom_pal_posix"))]
 #[cfg(target_os = "windows")]
-#[path = "windows/mod.rs"]
-mod platform;
+#[path = "windows/iox2_pal_posix.rs"]
+mod iox2_pal_posix;
 
 #[cfg(not(feature = "libc_platform"))]
 pub(crate) mod internal {
@@ -77,5 +104,5 @@ pub mod posix {
     #[allow(unused_imports)]
     pub(crate) use common::string_operations::*;
 
-    pub use crate::platform::*;
+    pub use crate::iox2_pal_posix::platform::*;
 }
