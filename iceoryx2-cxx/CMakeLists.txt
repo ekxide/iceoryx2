@@ -121,7 +121,7 @@ target_compile_features(static-lib-cxx PUBLIC ${ICEORYX2_CXX_STD})
 set_target_properties(static-lib-cxx
     PROPERTIES
     POSITION_INDEPENDENT_CODE ON
-    OUTPUT_NAME "iceoryx2_cxx"
+    OUTPUT_NAME "iceoryx2_cxx_static"
 )
 
 target_link_libraries(static-lib-cxx
@@ -140,7 +140,7 @@ target_compile_features(shared-lib-cxx PUBLIC ${ICEORYX2_CXX_STD})
 set_target_properties(shared-lib-cxx
     PROPERTIES
     POSITION_INDEPENDENT_CODE ON
-    OUTPUT_NAME "iceoryx2_cxx"
+    OUTPUT_NAME "iceoryx2_cxx_shared"
 )
 
 target_link_libraries(shared-lib-cxx
