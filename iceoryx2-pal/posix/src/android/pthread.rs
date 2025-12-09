@@ -20,35 +20,47 @@ pub unsafe fn pthread_rwlockattr_setkind_np(_attr: *mut pthread_rwlockattr_t, _p
     todo!() // TODO this function is not used; shall we remove it
 }
 
-pub unsafe fn pthread_barrier_wait(barrier: *mut pthread_barrier_t) -> int {
-    libc::pthread_barrier_wait(barrier)
+pub unsafe fn pthread_barrier_wait(_barrier: *mut pthread_barrier_t) -> int {
+    // libc::pthread_barrier_wait(barrier)
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_barrier_init(
-    barrier: *mut pthread_barrier_t,
-    attr: *const pthread_barrierattr_t,
-    count: uint,
+    _barrier: *mut pthread_barrier_t,
+    _attr: *const pthread_barrierattr_t,
+    _count: uint,
 ) -> int {
-    libc::pthread_barrier_init(barrier, attr, count)
+    // libc::pthread_barrier_init(barrier, attr, count)
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
-pub unsafe fn pthread_barrier_destroy(barrier: *mut pthread_barrier_t) -> int {
-    libc::pthread_barrier_destroy(barrier)
+pub unsafe fn pthread_barrier_destroy(_barrier: *mut pthread_barrier_t) -> int {
+    // libc::pthread_barrier_destroy(barrier)
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
-pub unsafe fn pthread_barrierattr_destroy(attr: *mut pthread_barrierattr_t) -> int {
-    libc::pthread_barrierattr_destroy(attr)
+pub unsafe fn pthread_barrierattr_destroy(_attr: *mut pthread_barrierattr_t) -> int {
+    // libc::pthread_barrierattr_destroy(attr)
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
-pub unsafe fn pthread_barrierattr_init(attr: *mut pthread_barrierattr_t) -> int {
-    libc::pthread_barrierattr_init(attr)
+pub unsafe fn pthread_barrierattr_init(_attr: *mut pthread_barrierattr_t) -> int {
+    // libc::pthread_barrierattr_init(attr)
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_barrierattr_setpshared(
-    attr: *mut pthread_barrierattr_t,
-    pshared: int,
+    _attr: *mut pthread_barrierattr_t,
+    _pshared: int,
 ) -> int {
-    libc::pthread_barrierattr_setpshared(attr, pshared)
+    // libc::pthread_barrierattr_setpshared(attr, pshared)
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_attr_init(attr: *mut pthread_attr_t) -> int {

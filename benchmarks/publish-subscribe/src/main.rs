@@ -18,6 +18,8 @@ use iceoryx2_bb_posix::barrier::*;
 use iceoryx2_bb_posix::clock::Time;
 use iceoryx2_bb_posix::thread::ThreadBuilder;
 
+use std::sync::Barrier;
+
 const ITERATIONS: u64 = 10000000;
 
 fn perform_benchmark<T: Service>(args: &Args) -> Result<(), Box<dyn core::error::Error>> {
@@ -58,14 +60,14 @@ fn perform_benchmark<T: Service>(args: &Args) -> Result<(), Box<dyn core::error:
         additional_subscribers.push(service_b2a.subscriber_builder().create()?);
     }
 
-    let start_benchmark_barrier_handle = BarrierHandle::new();
-    let startup_barrier_handle = BarrierHandle::new();
-    let startup_barrier = BarrierBuilder::new(3)
-        .create(&startup_barrier_handle)
-        .unwrap();
-    let start_benchmark_barrier = BarrierBuilder::new(3)
-        .create(&start_benchmark_barrier_handle)
-        .unwrap();
+    // let start_benchmark_barrier_handle = BarrierHandle::new();
+    // let startup_barrier_handle = BarrierHandle::new();
+    let startup_barrier = Barrier::new(3);
+    // .create(&startup_barrier_handle)
+    // .unwrap();
+    let start_benchmark_barrier = Barrier::new(3);
+    // .create(&start_benchmark_barrier_handle)
+    // .unwrap();
 
     let t1 = ThreadBuilder::new()
         .affinity(&[args.cpu_core_participant_1])
