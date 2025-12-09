@@ -31,16 +31,12 @@ pub unsafe fn munlockall() -> int {
     libc::munlockall()
 }
 
-pub unsafe fn shm_open(_name: *const c_char, _oflag: int, _mode: mode_t) -> int {
-    Errno::set(Errno::ENOSYS);
-
-    -1
+pub unsafe fn shm_open(name: *const c_char, oflag: int, mode: mode_t) -> int {
+    internal::shm_open(name, oflag, mode)
 }
 
-pub unsafe fn shm_unlink(_name: *const c_char) -> int {
-    Errno::set(Errno::ENOSYS);
-
-    -1
+pub unsafe fn shm_unlink(name: *const c_char) -> int {
+    internal::shm_unlink(name)
 }
 
 pub unsafe fn shm_list() -> Vec<[i8; 256]> {
@@ -97,4 +93,13 @@ pub unsafe fn munmap(addr: *mut void, len: size_t) -> int {
 
 pub unsafe fn mprotect(addr: *mut void, len: size_t, prot: int) -> int {
     libc::mprotect(addr, len, prot)
+}
+
+mod internal {
+    use super::*;
+
+    extern "C" {
+        pub(super) fn shm_open(name: *const c_char, oflag: int, mode: mode_t) -> int;
+        pub(super) fn shm_unlink(name: *const c_char) -> int;
+}
 }
