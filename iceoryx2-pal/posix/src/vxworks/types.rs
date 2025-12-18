@@ -103,7 +103,9 @@ pub type pthread_attr_t = libc::pthread_attr_t;
 impl MemZeroedStruct for pthread_attr_t {}
 
 pub type pthread_t = libc::pthread_t;
-impl MemZeroedStruct for pthread_t {}
+
+#[cfg(target_pointer_width = "64")]
+impl MemZeroedStruct for pthread_t {} // NOTE: on 32 bit, pthread_t is a typedef to the same type as native_cpu_set_t aka libc::cpuset_t;
 
 pub type pthread_rwlockattr_t = libc::pthread_rwlockattr_t;
 impl MemZeroedStruct for pthread_rwlockattr_t {}
