@@ -421,8 +421,6 @@ jobs:
     strategy:
       matrix:
         os: [windows-2022, ubuntu-latest, macos-latest] # todo (iox2-#1049): Use windows latest here
-        # NOTE: enable for MinGW
-        # toolchain: [stable, stable-gnu, 1.83.0]
         toolchain: [stable, 1.83.0]
         mode:
           - name: "release"
@@ -433,7 +431,7 @@ jobs:
             arg: ""
             cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug" # required for Makefile Generators at config time
             cmake-build-config: "--config Debug" # required for Visual Studio at build and install time
-        cargo-features-flag: ["", "--features libc_platform"]
+        cargo-features-flag: [""]
         include:
           # NOTE: enable for MinGW
           # - toolchain: stable-gnu
@@ -443,16 +441,12 @@ jobs:
             cmake-cxx-flags: '-DCMAKE_CXX_FLAGS="/MP"'
           - os: ubuntu-latest
             toolchain: stable
-        exclude:
-          # NOTE: enable for MinGW
-          # - os: ubuntu-latest
-          #   toolchain: stable-gnu
-          # - os: macos-latest
-          #   toolchain: stable-gnu
-          - os: windows-2022 # todo (iox2-#1049): Use windows latest here
+            mode: { name: "release", arg: "--release", cmake-build-type: "-DCMAKE_BUILD_TYPE=Release", cmake-build-config: ""}
             cargo-features-flag: "--features libc_platform"
-          - os: macos-latest
-            cargo-features-flag: "--features libc_platform"
+          - os: ubuntu-latest
+            toolchain: 1.83.0
+            mode: { name: "debug", arg: "", cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug", cmake-build-config: ""}
+            cargo-features-flag: "--features iceoryx2/libc_platform" # NOTE: using 'iceoryx2/libc_platform' to trigger the feature propagation check
     timeout-minutes: 90
     runs-on: ${{ matrix.os }}
     steps:
@@ -486,6 +480,10 @@ jobs:
         run: |
           internal/scripts/ci_prepare_ubuntu.sh
           uname -a
+
+      - name: Additional setup for libc_platform
+        if: ${{ contains(matrix.cargo-features-flag, 'libc_platform') }}
+        run: sudo apt remove -y --purge '^libclang-.*-dev' # remove libclang to force a compile error if the feature is not propagated correctly and bindgen is used
 
       - name: Run cargo build
         run: cargo build --workspace --all-targets ${{ matrix.mode.arg }} ${{ matrix.cargo-features-flag }}
