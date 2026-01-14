@@ -317,12 +317,12 @@ jobs:
       matrix:
         os: [ubuntu-latest] # [windows-latest, ubuntu-latest, macos-latest]
         toolchain: [stable] # [stable, 1.83.0, beta, nightly]
-        mode:
-          - name: "release"
-            arg: "--release"
+        mode: ["release", "debug"]
+        include:
+          - mode: "release"
+            cargo-build-type-flag: "--release"
             cmake-build-type: "-DCMAKE_BUILD_TYPE=Release"
-          - name: "debug"
-            arg: ""
+          - mode: "debug"
             cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug"
     timeout-minutes: 60
     runs-on: ${{ matrix.os }}
@@ -362,10 +362,10 @@ jobs:
           uname -a
 
       - name: Run cargo build
-        run: cargo build --workspace --exclude iceoryx2-ffi-python --all-targets ${{ matrix.mode.arg }} --target i686-unknown-linux-gnu
+        run: cargo build --workspace --exclude iceoryx2-ffi-python --all-targets ${{ matrix.cargo-build-type-flag }} --target i686-unknown-linux-gnu
 
       - name: Run cargo nextest
-        run: cargo nextest run --workspace --exclude iceoryx2-ffi-python --all-targets --no-fail-fast ${{ matrix.mode.arg }} --target i686-unknown-linux-gnu
+        run: cargo nextest run --workspace --exclude iceoryx2-ffi-python --all-targets --no-fail-fast ${{ matrix.cargo-build-type-flag }} --target i686-unknown-linux-gnu
 
       - name: Build language bindings
         shell: bash
@@ -377,8 +377,8 @@ jobs:
                 -DBUILD_TESTING=ON \
                 -DCMAKE_C_FLAGS="-m32 -malign-double" \
                 -DCMAKE_CXX_FLAGS="-m32 -malign-double" \
-                -DRUST_BUILD_ARTIFACT_PATH="${{ github.workspace }}/target/i686-unknown-linux-gnu/${{ matrix.mode.name }}" \
-                ${{ matrix.mode.cmake-build-type }}
+                -DRUST_BUILD_ARTIFACT_PATH="${{ github.workspace }}/target/i686-unknown-linux-gnu/${{ matrix.mode }}" \
+                ${{ matrix.cmake-build-type }}
           cmake --build target/ff/cc/build
           cmake --install target/ff/cc/build
 
@@ -401,7 +401,7 @@ jobs:
                 -DCMAKE_PREFIX_PATH=${{ github.workspace }}/target/ff/cc/install \
                 -DCMAKE_C_FLAGS="-m32 -malign-double" \
                 -DCMAKE_CXX_FLAGS="-m32 -malign-double" \
-                ${{ matrix.mode.cmake-build-type }}
+                ${{ matrix.cmake-build-type }}
           cmake --build target/ff/out-of-tree-c
 
       - name: Build C++ language binding examples in out-of-tree configuration
@@ -412,7 +412,7 @@ jobs:
                 -DCMAKE_PREFIX_PATH="${{ github.workspace }}/target/ff/cc/install" \
                 -DCMAKE_C_FLAGS="-m32 -malign-double" \
                 -DCMAKE_CXX_FLAGS="-m32 -malign-double" \
-                ${{ matrix.mode.cmake-build-type }}
+                ${{ matrix.cmake-build-type }}
           cmake --build target/ff/out-of-tree-cxx
 
   x86_64:
@@ -422,15 +422,7 @@ jobs:
       matrix:
         os: [windows-2022, ubuntu-latest, macos-latest] # todo (iox2-#1049): Use windows latest here
         toolchain: [stable, 1.83.0]
-        mode:
-          - name: "release"
-            arg: "--release"
-            cmake-build-type: "-DCMAKE_BUILD_TYPE=Release" # required for Makefile Generators at config time
-            cmake-build-config: "--config Release" # required for Visual Studio at build and install time
-          - name: "debug"
-            arg: ""
-            cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug" # required for Makefile Generators at config time
-            cmake-build-config: "--config Debug" # required for Visual Studio at build and install time
+        mode: ["release", "debug"]
         cargo-features-flag: [""]
         include:
           # NOTE: enable for MinGW
@@ -439,13 +431,26 @@ jobs:
           - os: windows-2022 # todo (iox2-#1049): Use windows latest here
             toolchain: stable
             cmake-cxx-flags: '-DCMAKE_CXX_FLAGS="/MP"'
+
+          - mode: "release"
+            cargo-build-type-flag: "--release"
+            cmake-build-type: "-DCMAKE_BUILD_TYPE=Release" # required for Makefile Generators at config time
+            cmake-build-config: "--config Release" # required for Visual Studio at build and install time
+
+          - mode: "debug"
+            cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug" # required for Makefile Generators at config time
+            cmake-build-config: "--config Debug" # required for Visual Studio at build and install time
+
           - os: ubuntu-latest
             toolchain: stable
-            mode: { name: "release", arg: "--release", cmake-build-type: "-DCMAKE_BUILD_TYPE=Release", cmake-build-config: ""}
+            mode: "debug"
+            cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug"
             cargo-features-flag: "--features libc_platform"
+
           - os: ubuntu-latest
             toolchain: 1.83.0
-            mode: { name: "debug", arg: "", cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug", cmake-build-config: ""}
+            mode: "debug"
+            cmake-build-type: "-DCMAKE_BUILD_TYPE=Debug"
             cargo-features-flag: "--features iceoryx2/libc_platform" # NOTE: using 'iceoryx2/libc_platform' to trigger the feature propagation check
     timeout-minutes: 90
     runs-on: ${{ matrix.os }}
@@ -486,10 +491,10 @@ jobs:
         run: sudo apt remove -y --purge '^libclang-.*-dev' # remove libclang to force a compile error if the feature is not propagated correctly and bindgen is used
 
       - name: Run cargo build
-        run: cargo build --workspace --all-targets ${{ matrix.mode.arg }} ${{ matrix.cargo-features-flag }}
+        run: cargo build --workspace --all-targets ${{ matrix.cargo-build-type-flag }} ${{ matrix.cargo-features-flag }}
 
       - name: Run cargo nextest
-        run: cargo nextest run --workspace --all-targets --no-fail-fast ${{ matrix.mode.arg }} ${{ matrix.cargo-features-flag }}
+        run: cargo nextest run --workspace --all-targets --no-fail-fast ${{ matrix.cargo-build-type-flag }} ${{ matrix.cargo-features-flag }}
 
       - name: Print native libs of FFI target
         if: false # This step takes 1 to 2 minutes; only enable if there are linker issues with the FFI target
@@ -505,13 +510,13 @@ jobs:
                 -DBUILD_EXAMPLES=ON \
                 -DBUILD_TESTING=ON \
                 -DWARNING_AS_ERROR=ON \
-                ${{ matrix.mode.cmake-build-type }} \
-                ${{ matrix.mode.cmake-cxx-flags }} \
+                ${{ matrix.cmake-build-type }} \
+                ${{ matrix.cmake-cxx-flags }} \
                 ${{ matrix.cmake-build-system-generator }} \
                 -DCMAKE_INSTALL_PREFIX=target/ff/cc/install \
-                -DRUST_BUILD_ARTIFACT_PATH="${{ github.workspace }}/target/${{ matrix.mode.name }}"
-          cmake --build target/ff/cc/build ${{ matrix.mode.cmake-build-config }}
-          cmake --install target/ff/cc/build ${{ matrix.mode.cmake-build-config }}
+                -DRUST_BUILD_ARTIFACT_PATH="${{ github.workspace }}/target/${{ matrix.mode }}"
+          cmake --build target/ff/cc/build ${{ matrix.cmake-build-config }}
+          cmake --install target/ff/cc/build ${{ matrix.cmake-build-config }}
 
       - name: Run C++ iceoryx2-bb tests
         run: target/ff/cc/build/tests/iceoryx2-bb-cxx-tests
@@ -535,22 +540,22 @@ jobs:
         run: |
           cmake -S examples/c \
                 -B target/ff/out-of-tree-c \
-                ${{ matrix.mode.cmake-build-type }} \
-                ${{ matrix.mode.cmake-cxx-flags }} \
+                ${{ matrix.cmake-build-type }} \
+                ${{ matrix.cmake-cxx-flags }} \
                 ${{ matrix.cmake-build-system-generator }} \
                 -DCMAKE_PREFIX_PATH="${{ github.workspace }}/target/ff/cc/install"
-          cmake --build target/ff/out-of-tree-c ${{ matrix.mode.cmake-build-config }}
+          cmake --build target/ff/out-of-tree-c ${{ matrix.cmake-build-config }}
 
       - name: Build C++ language binding examples in out-of-tree configuration
         shell: bash
         run: |
           cmake -S examples/cxx \
                 -B target/ff/out-of-tree-cxx \
-                ${{ matrix.mode.cmake-build-type }} \
-                ${{ matrix.mode.cmake-cxx-flags }} \
+                ${{ matrix.cmake-build-type }} \
+                ${{ matrix.cmake-cxx-flags }} \
                 ${{ matrix.cmake-build-system-generator }} \
                 -DCMAKE_PREFIX_PATH="${{ github.workspace }}/target/ff/cc/install"
-          cmake --build target/ff/out-of-tree-cxx ${{ matrix.mode.cmake-build-config }}
+          cmake --build target/ff/out-of-tree-cxx ${{ matrix.cmake-build-config }}
 
   x86_64_unstable:
     needs: [preflight-check, static-code-analysis, cargo-nextest]
@@ -560,11 +565,10 @@ jobs:
       matrix:
         os: [windows-2022, ubuntu-latest, macos-latest] # todo (iox2-#1049): Use windows latest here
         toolchain: [beta, nightly]
-        mode:
-          - name: "release"
-            arg: "--release"
-          - name: "debug"
-            arg: ""
+        mode: ["release", "debug"]
+        include:
+          - mode: "release"
+            cargo-build-type-flag: "--release"
     timeout-minutes: 90
     runs-on: ${{ matrix.os }}
     steps:
@@ -600,10 +604,10 @@ jobs:
           uname -a
 
       - name: Run cargo build
-        run: cargo build --workspace --all-targets ${{ matrix.mode.arg }}
+        run: cargo build --workspace --all-targets ${{ matrix.cargo-build-type-flag }}
 
       - name: Run cargo nextest
-        run: cargo nextest run --workspace --all-targets --no-fail-fast ${{ matrix.mode.arg }}
+        run: cargo nextest run --workspace --all-targets --no-fail-fast ${{ matrix.cargo-build-type-flag }}
 
   ### TODO: does not work yet reliable on the GitHub CI, seems to end up in an infinite loop
   ###       current alternative is a cirrus.yml aarch64 target
