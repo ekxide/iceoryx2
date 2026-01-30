@@ -37,6 +37,8 @@ members = [
     "iceoryx2-pal/print/",
     "iceoryx2-pal/configuration/",
     "iceoryx2-pal/testing/",
+    "iceoryx2-pal/testing-macros/",
+    "iceoryx2-pal/testing-nostd/",
     "iceoryx2-pal/os-api",
 
     "iceoryx2-services/discovery",
@@ -104,6 +106,8 @@ iceoryx2-pal-print = { version = "0.8.999", path = "iceoryx2-pal/print/" }
 iceoryx2-pal-os-api = { version = "0.8.999", path = "iceoryx2-pal/os-api/" }
 iceoryx2-pal-configuration = { version = "0.8.999", path = "iceoryx2-pal/configuration/" }
 iceoryx2-pal-testing = { version = "0.8.999", path = "iceoryx2-pal/testing/" }
+iceoryx2-pal-testing-macros = { version = "0.8.999", path = "iceoryx2-pal/testing-macros/" }
+iceoryx2-pal-testing-nostd = { version = "0.8.999", path = "iceoryx2-pal/testing-nostd/" }
 iceoryx2-cal = { version = "0.8.999", path = "iceoryx2-cal", default-features = false }
 iceoryx2-cal-conformance-tests = { version = "0.8.999", path = "iceoryx2-cal/conformance-tests"}
 iceoryx2 = { version = "0.8.999", path = "iceoryx2/", default-features = false }
@@ -131,6 +135,7 @@ better-panic = { version = "0.3.0" }
 colored = { version = "2.1" }
 generic-tests = { version = "0.1.2" }
 human-panic = { version = "=2.0.2" }
+inventory = { version = "0.3", default-features = false }
 libc = { version = "0.2.169", features = ['extra_traits'] }
 log = { version = "0.4.21" }
 loom = { version = "0.7.2" }

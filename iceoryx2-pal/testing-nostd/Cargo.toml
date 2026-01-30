@@ -1,6 +1,6 @@
 [package]
-name = "iceoryx2-bb-testing"
-description = "iceoryx2: [internal] simple testing primitives"
+name = "iceoryx2-pal-testing-nostd"
+description = "iceoryx2: [internal] testing utilities for no_std"
 categories = { workspace = true }
 edition = { workspace = true }
 homepage = { workspace = true }
@@ -12,10 +12,9 @@ version = { workspace = true }
 
 [features]
 default = []
-
 std = []
 
 [dependencies]
-iceoryx2-bb-elementary-traits = { workspace = true }
-iceoryx2-pal-configuration = { workspace = true }
-iceoryx2-pal-testing = { workspace = true }
+iceoryx2-pal-print = { workspace = true }
+
+inventory = { workspace = true }

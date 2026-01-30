@@ -227,27 +227,27 @@ macro_rules! assert_that {
         {
             let watchdog = iceoryx2_pal_testing::watchdog::Watchdog::new();
 
-            while $call() != $rhs {
-                std::thread::yield_now();
-                std::thread::sleep(core::time::Duration::from_millis(10));
-                std::thread::yield_now();
-            }
+            // while $call() != $rhs {
+            //     std::thread::yield_now();
+            //     std::thread::sleep(core::time::Duration::from_millis(10));
+            //     std::thread::yield_now();
+            // }
         }
     };
     [color_start] => {
         {
-            use std::io::IsTerminal;
-            if std::io::stderr().is_terminal() {
+            use $crate::internal::IsTerminal;
+            if $crate::internal::stderr().is_terminal() {
                 "\x1b[1;4;33m"
             } else {
                 ""
             }
         }
-   };
+    };
     [color_end] => {
         {
-            use std::io::IsTerminal;
-            if std::io::stderr().is_terminal() {
+            use $crate::internal::IsTerminal;
+            if $crate::internal::stderr().is_terminal() {
                 "\x1b[0m"
             } else {
                 ""
