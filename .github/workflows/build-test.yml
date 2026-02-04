@@ -2,7 +2,7 @@ name: Build and Test
 
 on:
   push:
-    branches: [main, release*]
+    branches: [test-cargo-lockfile-update]
   pull_request:
     branches: [main, release*]
     types: [opened, ready_for_review, reopened, synchronize]

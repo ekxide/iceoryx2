@@ -1,6 +1,8 @@
 name: Nightly
 
 on:
+  push:
+    branches: [test-cargo-lockfile-update]
   schedule:
   - cron: "0 1 * * *" # Runs at 1 AM UTC timezone
   workflow_dispatch:
