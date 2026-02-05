@@ -13,13 +13,14 @@
 extern crate iceoryx2_bb_loggers;
 
 use iceoryx2_bb_container_tests_common::polymorphic_string_tests;
+use iceoryx2_bb_testing_nostd_macros::inventory_test;
 
-#[test]
+#[inventory_test]
 fn try_clone_clones_empty_string() {
     polymorphic_string_tests::try_clone_clones_empty_string();
 }
 
-#[test]
+#[inventory_test]
 fn try_clone_clones_filled_string() {
     polymorphic_string_tests::try_clone_clones_filled_string();
 }
