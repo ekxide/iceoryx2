@@ -19,6 +19,8 @@ members = [
     "iceoryx2-bb/container/tests-common",
     "iceoryx2-bb/container/tests-nostd",
     "iceoryx2-bb/derive-macros",
+    "iceoryx2-bb/derive-macros/tests-common",
+    "iceoryx2-bb/derive-macros/tests-nostd",
     "iceoryx2-bb/elementary",
     "iceoryx2-bb/elementary/tests-common",
     "iceoryx2-bb/elementary/tests-nostd",
@@ -108,6 +110,8 @@ iceoryx2-bb-container = { version = "0.8.999", path = "iceoryx2-bb/container/" }
 iceoryx2-bb-container-tests-common = { version = "0.8.999", path = "iceoryx2-bb/container/tests-common" }
 iceoryx2-bb-container-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/container/tests-nostd" }
 iceoryx2-bb-derive-macros = { version = "0.8.999", path = "iceoryx2-bb/derive-macros/" }
+iceoryx2-bb-derive-macros-tests-common = { version = "0.8.999", path = "iceoryx2-bb/derive-macros/tests-common" }
+iceoryx2-bb-derive-macros-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/derive-macros/tests-nostd" }
 iceoryx2-bb-elementary = { version = "0.8.999", path = "iceoryx2-bb/elementary/", default-features = false }
 iceoryx2-bb-elementary-tests-common = { version = "0.8.999", path = "iceoryx2-bb/elementary/tests-common" }
 iceoryx2-bb-elementary-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/elementary/tests-nostd" }

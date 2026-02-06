@@ -11,23 +11,24 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use iceoryx2_bb_derive_macros_tests_common::placement_default_tests;
+use iceoryx2_bb_testing_nostd_macros::inventory_test;
 
-#[test]
+#[inventory_test]
 fn placement_default_derive_for_structs_works() {
     placement_default_tests::placement_default_derive_for_structs_works();
 }
 
-#[test]
+#[inventory_test]
 fn placement_default_derive_for_unnamed_structs_works() {
     placement_default_tests::placement_default_derive_for_unnamed_structs_works();
 }
 
-#[test]
+#[inventory_test]
 fn placement_default_derive_for_generic_structs_works() {
     placement_default_tests::placement_default_derive_for_generic_structs_works();
 }
 
-#[test]
+#[inventory_test]
 fn placement_default_derive_for_generic_unnamed_structs_works() {
     placement_default_tests::placement_default_derive_for_generic_unnamed_structs_works();
 }
