@@ -35,6 +35,8 @@ members = [
     "iceoryx2-bb/testing-nostd/",
     "iceoryx2-bb/testing-nostd-macros/",
     "iceoryx2-bb/trait-tests",
+    "iceoryx2-bb/trait-tests/tests-common",
+    "iceoryx2-bb/trait-tests/tests-nostd",
 
     "iceoryx2-ffi/c",
     "iceoryx2-ffi/python",
@@ -123,6 +125,8 @@ iceoryx2-bb-memory-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/memo
 iceoryx2-bb-posix = { version = "0.8.999", path = "iceoryx2-bb/posix/" }
 iceoryx2-bb-system-types = { version = "0.8.999", path = "iceoryx2-bb/system-types/" }
 iceoryx2-bb-trait-tests = { version = "0.8.999", path = "iceoryx2-bb/trait-tests/" }
+iceoryx2-bb-trait-tests-common = { version = "0.8.999", path = "iceoryx2-bb/trait-tests/tests-common" }
+iceoryx2-bb-trait-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/trait-tests/tests-nostd" }
 iceoryx2-bb-testing = { version = "0.8.999", path = "iceoryx2-bb/testing/" }
 iceoryx2-bb-testing-nostd = { version = "0.8.999", path = "iceoryx2-bb/testing-nostd/" }
 iceoryx2-bb-testing-nostd-macros = { version = "0.8.999", path = "iceoryx2-bb/testing-nostd-macros/" }
