@@ -12,8 +12,8 @@
 
 use iceoryx2_bb_concurrency::internal::strategy::rwlock::*;
 use iceoryx2_bb_concurrency::{WaitAction, WaitResult};
-use iceoryx2_pal_testing::assert_that;
-use iceoryx2_pal_testing_nostd_macros::requires_std;
+use iceoryx2_bb_testing::assert_that;
+use iceoryx2_bb_testing_nostd_macros::requires_std;
 
 pub fn strategy_rwlock_reader_preference_try_write_lock_blocks_read_locks() {
     let sut = RwLockReaderPreference::new();
