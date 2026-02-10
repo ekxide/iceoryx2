@@ -20,6 +20,7 @@ add_executable(example_c_discovery src/main.c)
 # NOTE we use this example to test the builds for the shared library but this build
 # is partially broken on macOS; see also #233
 target_link_libraries(example_c_discovery
-   $<$<NOT:$<PLATFORM_ID:Darwin>>:iceoryx2-c::shared-lib>
-   $<$<PLATFORM_ID:Darwin>:iceoryx2-c::static-lib>
+   # $<$<NOT:$<PLATFORM_ID:Darwin>>:iceoryx2-c::shared-lib>
+   # $<$<PLATFORM_ID:Darwin>:iceoryx2-c::static-lib>
+   iceoryx2-c::static-lib
 )

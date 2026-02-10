@@ -50,8 +50,8 @@ add_library(iceoryx2-c::static-lib ALIAS static-lib)
 
 # shared lib
 
-add_library(shared-lib INTERFACE)
-add_library(iceoryx2-c::shared-lib ALIAS shared-lib)
+# add_library(shared-lib INTERFACE)
+# add_library(iceoryx2-c::shared-lib ALIAS shared-lib)
 
 # NOTE the solution with specifying a 'BUILD_INTERFACE' and a 'INSTALL_INTERFACE' was the only one that worked;
 # alternatively an imported library could be created, e.g. 'iceoryx2_ffi' with a corresponding alias, e.g. 'iceoryx2::ffi';
@@ -70,11 +70,11 @@ target_link_libraries(static-lib INTERFACE
     $<$<PLATFORM_ID:Linux>:dl rt>
     $<$<PLATFORM_ID:QNX>:stdc++ socket>
 )
-target_link_libraries(shared-lib INTERFACE
-    iceoryx2-c::includes-only
-    $<BUILD_INTERFACE:${ICEORYX2_C_SHARED_LIB_LINK_FILE}>
-    $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/${ICEORYX2_C_SHARED_LIB_LINK_NAME}>
-)
+# target_link_libraries(shared-lib INTERFACE
+#     iceoryx2-c::includes-only
+#     $<BUILD_INTERFACE:${ICEORYX2_C_SHARED_LIB_LINK_FILE}>
+#     $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/${ICEORYX2_C_SHARED_LIB_LINK_NAME}>
+# )
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/install.cmake)
 

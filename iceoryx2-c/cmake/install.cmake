@@ -57,7 +57,8 @@ configure_package_config_file(
 
 # target directories
 install(
-    TARGETS includes-only static-lib shared-lib
+    # TARGETS includes-only static-lib shared-lib
+    TARGETS includes-only static-lib
     EXPORT ${TARGETS_EXPORT_NAME}
     RUNTIME DESTINATION ${DESTINATION_BINDIR} COMPONENT bin
     LIBRARY DESTINATION ${DESTINATION_LIBDIR} COMPONENT lib

@@ -16,7 +16,7 @@ build = "build.rs"
 
 [lib]
 path = "src/lib.rs"
-crate-type = ["rlib", "cdylib", "staticlib"] # without "rlib" the doc examples are not run
+crate-type = ["rlib", "staticlib"] # without "rlib" the doc examples are not run
 
 [features]
 default = ["std"]
