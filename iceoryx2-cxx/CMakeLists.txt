@@ -134,22 +134,22 @@ target_link_libraries(static-lib-cxx
 
 # shared lib
 
-add_library(shared-lib-cxx SHARED $<TARGET_OBJECTS:iceoryx2-cxx-object-lib>)
-add_library(iceoryx2-cxx::shared-lib-cxx ALIAS shared-lib-cxx)
-
-target_compile_features(shared-lib-cxx PUBLIC ${ICEORYX2_CXX_STD})
-set_target_properties(shared-lib-cxx
-    PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
-    OUTPUT_NAME "iceoryx2_cxx"
-)
-
-target_link_libraries(shared-lib-cxx
-    PUBLIC
-    iceoryx2-bb-cxx::iceoryx2-bb-cxx
-    iceoryx2-c::shared-lib
-    iceoryx2-cxx::includes-only-cxx
-)
+# add_library(shared-lib-cxx SHARED $<TARGET_OBJECTS:iceoryx2-cxx-object-lib>)
+# add_library(iceoryx2-cxx::shared-lib-cxx ALIAS shared-lib-cxx)
+#
+# target_compile_features(shared-lib-cxx PUBLIC ${ICEORYX2_CXX_STD})
+# set_target_properties(shared-lib-cxx
+#     PROPERTIES
+#     POSITION_INDEPENDENT_CODE ON
+#     OUTPUT_NAME "iceoryx2_cxx"
+# )
+#
+# target_link_libraries(shared-lib-cxx
+#     PUBLIC
+#     iceoryx2-bb-cxx::iceoryx2-bb-cxx
+#     iceoryx2-c::shared-lib
+#     iceoryx2-cxx::includes-only-cxx
+# )
 
 # include install setup
 
