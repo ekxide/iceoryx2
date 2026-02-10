@@ -67,9 +67,7 @@ pub(crate) type native_cpu_set_t = libc::cpuset_t;
 impl MemZeroedStruct for native_cpu_set_t {}
 
 pub type sigset_t = libc::sigset_t;
-// TODO it seems pthread_t and sigset_t are just a typedef to u64 which leads to errors implementing 'Struct';
-//      since sigset_t is not used, it could just as well be removed
-// impl MemZeroedStruct for sigset_t {}
+impl MemZeroedStruct for sigset_t {}
 
 const _PTHREAD_SHARED_SEM_NAME_MAX: usize = 30;
 
@@ -105,9 +103,9 @@ pub type pthread_attr_t = libc::pthread_attr_t;
 impl MemZeroedStruct for pthread_attr_t {}
 
 pub type pthread_t = libc::pthread_t;
-
-#[cfg(target_pointer_width = "64")]
-impl MemZeroedStruct for pthread_t {} // NOTE: on 32 bit, pthread_t is a typedef to the same type as native_cpu_set_t aka libc::cpuset_t;
+// NOTE: on 64 bit, pthread_t is a typedef to the same type as sigset_t aka libc::sigset_t;
+//       on 32 bit, pthread_t is a typedef to the same type as native_cpu_set_t aka libc::cpuset_t;
+// impl MemZeroedStruct for pthread_t {}
 
 pub type pthread_rwlockattr_t = libc::pthread_rwlockattr_t;
 impl MemZeroedStruct for pthread_rwlockattr_t {}
