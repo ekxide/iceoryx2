@@ -32,6 +32,8 @@ members = [
     "iceoryx2-bb/memory/tests-common",
     "iceoryx2-bb/memory/tests-nostd",
     "iceoryx2-bb/posix",
+    "iceoryx2-bb/posix/tests-common",
+    "iceoryx2-bb/posix/tests-nostd",
     "iceoryx2-bb/system-types",
     "iceoryx2-bb/system-types/tests-common",
     "iceoryx2-bb/system-types/tests-nostd",
@@ -129,6 +131,7 @@ iceoryx2-bb-memory = { version = "0.8.999", path = "iceoryx2-bb/memory/" }
 iceoryx2-bb-memory-tests-common = { version = "0.8.999", path = "iceoryx2-bb/memory/tests-common" }
 iceoryx2-bb-memory-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/memory/tests-nostd" }
 iceoryx2-bb-posix = { version = "0.8.999", path = "iceoryx2-bb/posix/" }
+iceoryx2-bb-posix-tests-common = { version = "0.8.999", path = "iceoryx2-bb/posix/tests-common" }
 iceoryx2-bb-system-types = { version = "0.8.999", path = "iceoryx2-bb/system-types/" }
 iceoryx2-bb-system-types-tests-common = { version = "0.8.999", path = "iceoryx2-bb/system-types/tests-common" }
 iceoryx2-bb-system-types-tests-nostd = { version = "0.8.999", path = "iceoryx2-bb/system-types/tests-nostd" }
