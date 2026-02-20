@@ -15,7 +15,7 @@ extern crate iceoryx2_bb_loggers;
 use iceoryx2_bb_container::string::*;
 use iceoryx2_bb_elementary_traits::placement_default::PlacementDefault;
 use iceoryx2_bb_testing::{assert_that, memory::RawMemory};
-use serde_test::{assert_tokens, Token};
+use serde_test::{Token, assert_tokens};
 use std::str::FromStr;
 
 const SMALL_SUT_CAPACITY: usize = 4;

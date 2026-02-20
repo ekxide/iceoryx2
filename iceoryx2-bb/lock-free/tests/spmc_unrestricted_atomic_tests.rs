@@ -14,7 +14,7 @@ extern crate iceoryx2_bb_loggers;
 
 use core::sync::atomic::{AtomicBool, Ordering};
 use std::{
-    alloc::{alloc, dealloc, Layout},
+    alloc::{Layout, alloc, dealloc},
     ptr::addr_of,
     sync::Mutex,
     thread,
@@ -267,8 +267,8 @@ fn internal_pointer_calculation_works<ValueType: Copy + Default>() {
         let random_ptr = alloc(layout) as *mut UnrestrictedAtomic<ValueType>;
         *(random_ptr) = UnrestrictedAtomic::<ValueType>::new(ValueType::default());
 
-        let mgmt_ptr = addr_of!(*(&*random_ptr).__internal_get_mgmt());
-        let data_ptr = addr_of!(*(&*random_ptr).__internal_get_data_ptr());
+        let mgmt_ptr = addr_of!(*(*random_ptr).__internal_get_mgmt());
+        let data_ptr = addr_of!(*(*random_ptr).__internal_get_data_ptr());
 
         for i in -(align_of::<UnrestrictedAtomic<ValueType>>() as isize) + 1..=0 {
             let mut ptr = random_ptr;

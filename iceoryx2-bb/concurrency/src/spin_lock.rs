@@ -55,11 +55,13 @@ unsafe impl<T: Send> Sync for SpinLock<T> {}
 
 impl<T: Default> PlacementDefault for SpinLock<T> {
     unsafe fn placement_default(ptr: *mut Self) {
-        let locked_ptr = core::ptr::addr_of_mut!((*ptr).locked);
-        let value_ptr = core::ptr::addr_of_mut!((*ptr).value);
+        unsafe {
+            let locked_ptr = core::ptr::addr_of_mut!((*ptr).locked);
+            let value_ptr = core::ptr::addr_of_mut!((*ptr).value);
 
-        PlacementDefault::placement_default(locked_ptr);
-        PlacementDefault::placement_default(value_ptr);
+            PlacementDefault::placement_default(locked_ptr);
+            PlacementDefault::placement_default(value_ptr);
+        }
     }
 }
 

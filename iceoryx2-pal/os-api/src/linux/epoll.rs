@@ -39,38 +39,38 @@ pub const EPOLL_CTL_ADD: u32 = libc::EPOLL_CTL_ADD as _;
 pub const EPOLL_CTL_DEL: u32 = libc::EPOLL_CTL_DEL as _;
 pub const EPOLL_CTL_MOD: u32 = libc::EPOLL_CTL_MOD as _;
 
-pub unsafe fn epoll_addr_of_event_data(event: *const epoll_event) -> *const u8 {
+pub unsafe fn epoll_addr_of_event_data(event: *const epoll_event) -> *const u8 { unsafe {
     let event_ref = &*event;
     core::ptr::addr_of!(event_ref.u64).cast()
-}
+}}
 
-pub unsafe fn epoll_addr_of_event_data_mut(event: *mut epoll_event) -> *mut u8 {
+pub unsafe fn epoll_addr_of_event_data_mut(event: *mut epoll_event) -> *mut u8 { unsafe {
     let event_ref = &mut *event;
     core::ptr::addr_of!(event_ref.u64).cast_mut().cast()
-}
+}}
 
-pub unsafe fn epoll_create(size: posix::int) -> posix::int {
+pub unsafe fn epoll_create(size: posix::int) -> posix::int { unsafe {
     libc::epoll_create(size)
-}
+}}
 
-pub unsafe fn epoll_create1(flags: posix::int) -> posix::int {
+pub unsafe fn epoll_create1(flags: posix::int) -> posix::int { unsafe {
     libc::epoll_create1(flags)
-}
+}}
 
 pub unsafe fn epoll_ctl(
     epfd: posix::int,
     op: posix::int,
     fd: posix::int,
     event: *mut epoll_event,
-) -> posix::int {
+) -> posix::int { unsafe {
     libc::epoll_ctl(epfd, op, fd, event)
-}
+}}
 
 pub unsafe fn epoll_wait(
     epfd: posix::int,
     events: *mut epoll_event,
     maxevents: posix::int,
     timeout: posix::int,
-) -> posix::int {
+) -> posix::int { unsafe {
     libc::epoll_wait(epfd, events, maxevents, timeout)
-}
+}}

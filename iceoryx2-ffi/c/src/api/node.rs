@@ -13,9 +13,9 @@
 #![allow(non_camel_case_types)]
 
 use crate::api::{
+    AssertNonNullHandle, HandleToType, IOX2_OK, IntoCInt, ServiceBuilderUnion,
     iox2_callback_context, iox2_callback_progression_e, iox2_config_ptr, iox2_node_name_ptr,
     iox2_service_builder_h, iox2_service_builder_t, iox2_service_name_ptr, iox2_service_type_e,
-    AssertNonNullHandle, HandleToType, IntoCInt, ServiceBuilderUnion, IOX2_OK,
 };
 
 use iceoryx2::node::{
@@ -25,8 +25,8 @@ use iceoryx2::prelude::*;
 use iceoryx2_bb_container::semantic_string::SemanticString;
 use iceoryx2_bb_elementary::static_assert::*;
 use iceoryx2_bb_elementary_traits::AsCStr;
-use iceoryx2_ffi_macros::iceoryx2_ffi;
 use iceoryx2_ffi_macros::CStrRepr;
+use iceoryx2_ffi_macros::iceoryx2_ffi;
 
 use alloc::ffi::CString;
 use core::ffi::{c_char, c_int};
@@ -231,7 +231,7 @@ pub type iox2_node_list_callback = extern "C" fn(
 /// # Safety
 ///
 /// * The returned pointer is valid as long as the program runs and must not be modified or freed
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_list_failure_string(
     error: iox2_node_list_failure_e,
 ) -> *const c_char {
@@ -252,7 +252,7 @@ pub unsafe extern "C" fn iox2_node_list_failure_string(
 /// # Safety
 ///
 /// * The returned pointer is valid as long as the program runs and must not be modified or freed
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_wait_failure_string(
     error: iox2_node_wait_failure_e,
 ) -> *const c_char {
@@ -264,15 +264,17 @@ pub unsafe extern "C" fn iox2_node_wait_failure_string(
 /// # Safety
 ///
 /// * The `node_handle` must be valid and obtained by [`iox2_node_builder_create`](crate::iox2_node_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_name(node_handle: iox2_node_h_ref) -> iox2_node_name_ptr {
-    node_handle.assert_non_null();
+    unsafe {
+        node_handle.assert_non_null();
 
-    let node = &mut *node_handle.as_type();
+        let node = &mut *node_handle.as_type();
 
-    match node.service_type {
-        iox2_service_type_e::IPC => node.value.as_ref().ipc.name(),
-        iox2_service_type_e::LOCAL => node.value.as_ref().local.name(),
+        match node.service_type {
+            iox2_service_type_e::IPC => node.value.as_ref().ipc.name(),
+            iox2_service_type_e::LOCAL => node.value.as_ref().local.name(),
+        }
     }
 }
 
@@ -282,26 +284,28 @@ pub unsafe extern "C" fn iox2_node_name(node_handle: iox2_node_h_ref) -> iox2_no
 /// # Safety
 ///
 /// * The `node_handle` must be valid and obtained by [`iox2_node_builder_create`](crate::iox2_node_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_wait(
     node_handle: iox2_node_h_ref,
     cycle_time_sec: u64,
     cycle_time_nsec: u32,
 ) -> c_int {
-    node_handle.assert_non_null();
+    unsafe {
+        node_handle.assert_non_null();
 
-    let node = &mut *node_handle.as_type();
-    let cycle_time =
-        Duration::from_secs(cycle_time_sec) + Duration::from_nanos(cycle_time_nsec as u64);
+        let node = &mut *node_handle.as_type();
+        let cycle_time =
+            Duration::from_secs(cycle_time_sec) + Duration::from_nanos(cycle_time_nsec as u64);
 
-    let result = match node.service_type {
-        iox2_service_type_e::IPC => node.value.as_ref().ipc.wait(cycle_time),
-        iox2_service_type_e::LOCAL => node.value.as_ref().local.wait(cycle_time),
-    };
+        let result = match node.service_type {
+            iox2_service_type_e::IPC => node.value.as_ref().ipc.wait(cycle_time),
+            iox2_service_type_e::LOCAL => node.value.as_ref().local.wait(cycle_time),
+        };
 
-    match result {
-        Ok(()) => IOX2_OK,
-        Err(e) => e.into_c_int(),
+        match result {
+            Ok(()) => IOX2_OK,
+            Err(e) => e.into_c_int(),
+        }
     }
 }
 
@@ -310,15 +314,17 @@ pub unsafe extern "C" fn iox2_node_wait(
 /// # Safety
 ///
 /// * The `node_handle` must be valid and obtained by [`iox2_node_builder_create`](crate::iox2_node_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_config(node_handle: iox2_node_h_ref) -> iox2_config_ptr {
-    node_handle.assert_non_null();
+    unsafe {
+        node_handle.assert_non_null();
 
-    let node = &mut *node_handle.as_type();
+        let node = &mut *node_handle.as_type();
 
-    match node.service_type {
-        iox2_service_type_e::IPC => node.value.as_ref().ipc.config(),
-        iox2_service_type_e::LOCAL => node.value.as_ref().local.config(),
+        match node.service_type {
+            iox2_service_type_e::IPC => node.value.as_ref().ipc.config(),
+            iox2_service_type_e::LOCAL => node.value.as_ref().local.config(),
+        }
     }
 }
 
@@ -327,17 +333,19 @@ pub unsafe extern "C" fn iox2_node_config(node_handle: iox2_node_h_ref) -> iox2_
 /// # Safety
 ///
 /// * The `node_handle` must be valid and obtained by [`iox2_node_builder_create`](crate::iox2_node_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_signal_handling_mode(
     node_handle: iox2_node_h_ref,
 ) -> iox2_signal_handling_mode_e {
-    node_handle.assert_non_null();
+    unsafe {
+        node_handle.assert_non_null();
 
-    let node = &mut *node_handle.as_type();
+        let node = &mut *node_handle.as_type();
 
-    match node.service_type {
-        iox2_service_type_e::IPC => node.value.as_ref().ipc.signal_handling_mode().into(),
-        iox2_service_type_e::LOCAL => node.value.as_ref().local.signal_handling_mode().into(),
+        match node.service_type {
+            iox2_service_type_e::IPC => node.value.as_ref().ipc.signal_handling_mode().into(),
+            iox2_service_type_e::LOCAL => node.value.as_ref().local.signal_handling_mode().into(),
+        }
     }
 }
 
@@ -346,17 +354,19 @@ pub unsafe extern "C" fn iox2_node_signal_handling_mode(
 /// # Safety
 ///
 /// * The `node_handle` must be valid and obtained by [`iox2_node_builder_create`](crate::iox2_node_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_id(
     node_handle: iox2_node_h_ref,
     service_type: iox2_service_type_e,
 ) -> iox2_node_id_ptr {
-    node_handle.assert_non_null();
+    unsafe {
+        node_handle.assert_non_null();
 
-    let node = &mut *node_handle.as_type();
-    match service_type {
-        iox2_service_type_e::IPC => node.value.as_ref().ipc.id(),
-        iox2_service_type_e::LOCAL => node.value.as_ref().local.id(),
+        let node = &mut *node_handle.as_type();
+        match service_type {
+            iox2_service_type_e::IPC => node.value.as_ref().ipc.id(),
+            iox2_service_type_e::LOCAL => node.value.as_ref().local.id(),
+        }
     }
 }
 
@@ -370,41 +380,43 @@ pub unsafe extern "C" fn iox2_node_id(
 /// * The `node_id` must be valid
 /// * The `config` must be valid
 /// * `has_success` must point to a valid memory location
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_dead_node_remove_stale_resources(
     service_type: iox2_service_type_e,
     node_id: iox2_node_id_h_ref,
     config: iox2_config_h_ref,
     has_success: *mut bool,
 ) -> c_int {
-    node_id.assert_non_null();
-    config.assert_non_null();
-    debug_assert!(!has_success.is_null());
+    unsafe {
+        node_id.assert_non_null();
+        config.assert_non_null();
+        debug_assert!(!has_success.is_null());
 
-    let node_id = (*node_id.as_type()).value.as_ref();
-    let config = (*config.as_type()).value.as_ref();
+        let node_id = (*node_id.as_type()).value.as_ref();
+        let config = (*config.as_type()).value.as_ref();
 
-    let result = match service_type {
-        iox2_service_type_e::IPC => {
-            DeadNodeView::<crate::IpcService>::__internal_remove_stale_resources(
-                *node_id,
-                NodeDetails::__internal_new(&None, &config.value),
-            )
-        }
-        iox2_service_type_e::LOCAL => {
-            DeadNodeView::<crate::LocalService>::__internal_remove_stale_resources(
-                *node_id,
-                NodeDetails::__internal_new(&None, &config.value),
-            )
-        }
-    };
+        let result = match service_type {
+            iox2_service_type_e::IPC => {
+                DeadNodeView::<crate::IpcService>::__internal_remove_stale_resources(
+                    *node_id,
+                    NodeDetails::__internal_new(&None, &config.value),
+                )
+            }
+            iox2_service_type_e::LOCAL => {
+                DeadNodeView::<crate::LocalService>::__internal_remove_stale_resources(
+                    *node_id,
+                    NodeDetails::__internal_new(&None, &config.value),
+                )
+            }
+        };
 
-    match result {
-        Ok(v) => {
-            *has_success = v;
-            IOX2_OK
+        match result {
+            Ok(v) => {
+                *has_success = v;
+                IOX2_OK
+            }
+            Err(e) => e.into_c_int(),
         }
-        Err(e) => e.into_c_int(),
     }
 }
 
@@ -459,7 +471,7 @@ pub(crate) fn iox2_node_list_impl<S: Service>(
             )
             .into()
         }
-        NodeState::Inaccessible(ref node_id) => callback(
+        NodeState::Inaccessible(node_id) => callback(
             iox2_node_state_e::INACCESSIBLE,
             node_id,
             unknown_executable.as_bytes_with_nul().as_ptr().cast(),
@@ -468,7 +480,7 @@ pub(crate) fn iox2_node_list_impl<S: Service>(
             callback_ctx,
         )
         .into(),
-        NodeState::Undefined(ref node_id) => callback(
+        NodeState::Undefined(node_id) => callback(
             iox2_node_state_e::UNDEFINED,
             node_id,
             unknown_executable.as_bytes_with_nul().as_ptr().cast(),
@@ -495,29 +507,31 @@ pub(crate) fn iox2_node_list_impl<S: Service>(
 /// # Safety
 ///
 /// * The `config_ptr` must be valid and obtained by ether [`iox2_node_config`] or [`iox2_config_global_config`](crate::iox2_config_global_config)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_list(
     service_type: iox2_service_type_e,
     config_ptr: iox2_config_ptr,
     callback: iox2_node_list_callback,
     callback_ctx: iox2_callback_context,
 ) -> c_int {
-    debug_assert!(!config_ptr.is_null());
+    unsafe {
+        debug_assert!(!config_ptr.is_null());
 
-    let config = &*config_ptr;
+        let config = &*config_ptr;
 
-    let list_result = match service_type {
-        iox2_service_type_e::IPC => Node::<crate::IpcService>::list(config, |node_state| {
-            iox2_node_list_impl(&node_state, callback, callback_ctx)
-        }),
-        iox2_service_type_e::LOCAL => Node::<crate::LocalService>::list(config, |node_state| {
-            iox2_node_list_impl(&node_state, callback, callback_ctx)
-        }),
-    };
+        let list_result = match service_type {
+            iox2_service_type_e::IPC => Node::<crate::IpcService>::list(config, |node_state| {
+                iox2_node_list_impl(&node_state, callback, callback_ctx)
+            }),
+            iox2_service_type_e::LOCAL => Node::<crate::LocalService>::list(config, |node_state| {
+                iox2_node_list_impl(&node_state, callback, callback_ctx)
+            }),
+        };
 
-    match list_result {
-        Ok(_) => IOX2_OK,
-        Err(e) => e.into_c_int(),
+        match list_result {
+            Ok(_) => IOX2_OK,
+            Err(e) => e.into_c_int(),
+        }
     }
 }
 
@@ -536,49 +550,51 @@ pub unsafe extern "C" fn iox2_node_list(
 /// # Safety
 ///
 /// * The `node_handle` is still valid after the return of this function and can be use in another function call.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_service_builder(
     node_handle: iox2_node_h_ref,
     service_builder_struct_ptr: *mut iox2_service_builder_t,
     service_name_ptr: iox2_service_name_ptr,
 ) -> iox2_service_builder_h {
-    node_handle.assert_non_null();
-    debug_assert!(!service_name_ptr.is_null());
+    unsafe {
+        node_handle.assert_non_null();
+        debug_assert!(!service_name_ptr.is_null());
 
-    let mut service_builder_struct_ptr = service_builder_struct_ptr;
-    fn no_op(_: *mut iox2_service_builder_t) {}
-    let mut deleter: fn(*mut iox2_service_builder_t) = no_op;
-    if service_builder_struct_ptr.is_null() {
-        service_builder_struct_ptr = iox2_service_builder_t::alloc();
-        deleter = iox2_service_builder_t::dealloc;
+        let mut service_builder_struct_ptr = service_builder_struct_ptr;
+        fn no_op(_: *mut iox2_service_builder_t) {}
+        let mut deleter: fn(*mut iox2_service_builder_t) = no_op;
+        if service_builder_struct_ptr.is_null() {
+            service_builder_struct_ptr = iox2_service_builder_t::alloc();
+            deleter = iox2_service_builder_t::dealloc;
+        }
+        debug_assert!(!service_builder_struct_ptr.is_null());
+
+        let node = &mut *node_handle.as_type();
+        match node.service_type {
+            iox2_service_type_e::IPC => {
+                let service_builder = node.value.as_ref().ipc.service_builder(&*service_name_ptr);
+                (*service_builder_struct_ptr).init(
+                    node.service_type,
+                    ServiceBuilderUnion::new_ipc_base(service_builder),
+                    deleter,
+                );
+            }
+            iox2_service_type_e::LOCAL => {
+                let service_builder = node
+                    .value
+                    .as_ref()
+                    .local
+                    .service_builder(&*service_name_ptr);
+                (*service_builder_struct_ptr).init(
+                    node.service_type,
+                    ServiceBuilderUnion::new_local_base(service_builder),
+                    deleter,
+                );
+            }
+        };
+
+        (*service_builder_struct_ptr).as_handle()
     }
-    debug_assert!(!service_builder_struct_ptr.is_null());
-
-    let node = &mut *node_handle.as_type();
-    match node.service_type {
-        iox2_service_type_e::IPC => {
-            let service_builder = node.value.as_ref().ipc.service_builder(&*service_name_ptr);
-            (*service_builder_struct_ptr).init(
-                node.service_type,
-                ServiceBuilderUnion::new_ipc_base(service_builder),
-                deleter,
-            );
-        }
-        iox2_service_type_e::LOCAL => {
-            let service_builder = node
-                .value
-                .as_ref()
-                .local
-                .service_builder(&*service_name_ptr);
-            (*service_builder_struct_ptr).init(
-                node.service_type,
-                ServiceBuilderUnion::new_local_base(service_builder),
-                deleter,
-            );
-        }
-    };
-
-    (*service_builder_struct_ptr).as_handle()
 }
 
 /// This function needs to be called to destroy the node!
@@ -591,21 +607,23 @@ pub unsafe extern "C" fn iox2_node_service_builder(
 ///
 /// * The `node_handle` is invalid after the return of this function and leads to undefined behavior if used in another function call!
 /// * The corresponding [`iox2_node_t`] can be re-used with a call to [`iox2_node_builder_create`](crate::iox2_node_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_node_drop(node_handle: iox2_node_h) {
-    node_handle.assert_non_null();
+    unsafe {
+        node_handle.assert_non_null();
 
-    let node = &mut *node_handle.as_type();
+        let node = &mut *node_handle.as_type();
 
-    match node.service_type {
-        iox2_service_type_e::IPC => {
-            ManuallyDrop::drop(&mut node.value.as_mut().ipc);
+        match node.service_type {
+            iox2_service_type_e::IPC => {
+                ManuallyDrop::drop(&mut node.value.as_mut().ipc);
+            }
+            iox2_service_type_e::LOCAL => {
+                ManuallyDrop::drop(&mut node.value.as_mut().local);
+            }
         }
-        iox2_service_type_e::LOCAL => {
-            ManuallyDrop::drop(&mut node.value.as_mut().local);
-        }
+        (node.deleter)(node);
     }
-    (node.deleter)(node);
 }
 
 // END C API

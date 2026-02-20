@@ -55,7 +55,7 @@ mod string {
     }
 
     impl RelocatableStringFactory {
-        fn allocator<'a>(&'a self) -> &'a BumpAllocator {
+        fn allocator(&self) -> &BumpAllocator {
             unsafe {
                 if (*self.allocator.get()).is_none() {
                     *self.allocator.get() = Some(Box::new(BumpAllocator::new(

@@ -28,7 +28,7 @@ members = [
 
     "iceoryx2-cal",
     "iceoryx2-cal/conformance-tests",
-    
+
     "iceoryx2",
     "iceoryx2/conformance-tests",
 
@@ -64,7 +64,7 @@ members = [
 [workspace.package]
 categories = ["network-programming"]
 description = "iceoryx2: Lock-Free Zero-Copy Interprocess Communication"
-edition = "2021"
+edition = "2024"
 homepage = "https://iceoryx.io"
 keywords = [
     "zero-copy",
@@ -76,7 +76,7 @@ keywords = [
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/eclipse-iceoryx/iceoryx2"
-rust-version = "1.83"
+rust-version = "1.85"
 version = "0.8.999"
 
 [workspace.dependencies]
@@ -121,9 +121,9 @@ iceoryx2-tunnel-zenoh = { version = "0.8.999", path = "iceoryx2-tunnel/zenoh" }
 iceoryx2-userland-record-and-replay = { version = "0.8.999", path = "iceoryx2-userland/record-and-replay" }
 
 anyhow = { version = "1.0.86" }
-bindgen = { version = "0.72.0" }
+bindgen = { version = "0.72.1" }
 cargo_metadata = { version = "0.18.1" }
-cbindgen = { version = "0.29.0" }
+cbindgen = { version = "0.29.2" }
 cc = { version = "1.0.98" }
 clap = { version = "4.5.4", features = ["derive"] }
 enum-iterator = { version = "2.1.0" }

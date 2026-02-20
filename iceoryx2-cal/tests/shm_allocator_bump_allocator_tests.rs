@@ -16,7 +16,7 @@ mod shm_allocator_bump_allocator {
     use core::{alloc::Layout, ptr::NonNull};
 
     use iceoryx2_bb_testing::assert_that;
-    use iceoryx2_cal::shm_allocator::{bump_allocator::*, AllocationStrategy, ShmAllocator};
+    use iceoryx2_cal::shm_allocator::{AllocationStrategy, ShmAllocator, bump_allocator::*};
 
     const MAX_SUPPORTED_ALIGNMENT: usize = 4096;
     const MEM_SIZE: usize = 16384 * 10;

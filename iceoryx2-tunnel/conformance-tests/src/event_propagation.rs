@@ -25,7 +25,7 @@ pub mod event_propagation {
     use iceoryx2_bb_posix::unique_system_id::UniqueSystemId;
     use iceoryx2_bb_testing::assert_that;
     use iceoryx2_tunnel::Tunnel;
-    use iceoryx2_tunnel_backend::traits::{testing::Testing, Backend};
+    use iceoryx2_tunnel_backend::traits::{Backend, testing::Testing};
 
     fn generate_service_name() -> ServiceName {
         ServiceName::new(&format!(

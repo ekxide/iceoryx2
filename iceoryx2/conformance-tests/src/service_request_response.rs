@@ -18,9 +18,9 @@ pub mod service_request_response {
     use std::collections::HashSet;
 
     use iceoryx2::node::NodeBuilder;
+    use iceoryx2::port::LoanError;
     use iceoryx2::port::client::Client;
     use iceoryx2::port::server::Server;
-    use iceoryx2::port::LoanError;
     use iceoryx2::prelude::{PortFactory, *};
     use iceoryx2::service::builder::{CustomHeaderMarker, CustomPayloadMarker};
     use iceoryx2::service::static_config::message_type_details::{TypeDetail, TypeVariant};

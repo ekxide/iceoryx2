@@ -49,8 +49,8 @@ mod mpmc_container {
     use core::fmt::Debug;
     use core::sync::atomic::AtomicU32;
     use iceoryx2_bb_concurrency::atomic::Ordering;
-    use iceoryx2_bb_elementary::bump_allocator::BumpAllocator;
     use iceoryx2_bb_elementary::CallbackProgression;
+    use iceoryx2_bb_elementary::bump_allocator::BumpAllocator;
     use iceoryx2_bb_elementary_traits::relocatable_container::RelocatableContainer;
     use iceoryx2_bb_lock_free::mpmc::container::ContainerAddFailure;
     use iceoryx2_bb_lock_free::mpmc::container::*;

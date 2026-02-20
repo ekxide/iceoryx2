@@ -13,7 +13,7 @@
 extern crate iceoryx2_bb_loggers;
 
 use iceoryx2_bb_system_types::ipv4_address::{
-    Ipv4Address, Ipv4AddressParseError, BROADCAST, LOCALHOST, UNSPECIFIED,
+    BROADCAST, Ipv4Address, Ipv4AddressParseError, LOCALHOST, UNSPECIFIED,
 };
 use iceoryx2_bb_testing::assert_that;
 

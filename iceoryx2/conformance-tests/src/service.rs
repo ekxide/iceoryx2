@@ -40,7 +40,7 @@ pub mod service {
     use iceoryx2_bb_posix::unique_system_id::UniqueSystemId;
     use iceoryx2_bb_testing::assert_that;
     use iceoryx2_bb_testing::watchdog::Watchdog;
-    use iceoryx2_log::{set_log_level, LogLevel};
+    use iceoryx2_log::{LogLevel, set_log_level};
 
     fn generate_name() -> ServiceName {
         ServiceName::new(&format!(

@@ -222,7 +222,7 @@ pub struct EpollGuard<'epoll, 'file_descriptor> {
     fd: &'file_descriptor FileDescriptor,
 }
 
-impl<'epoll, 'file_descriptor> EpollGuard<'epoll, 'file_descriptor> {
+impl<'file_descriptor> EpollGuard<'_, 'file_descriptor> {
     /// Returns a reference of the attached [`FileDescriptor`]
     pub fn file_descriptor(&self) -> &'file_descriptor FileDescriptor {
         self.fd
@@ -623,7 +623,9 @@ impl Epoll {
                                     "{msg} with a timeout of {timeout}ms since an interrupt signal was raised while acquiring the raised signals.");
                             }
                             Err(e) => {
-                                warn!("Epoll wait will continue but a failure occurred while reading the raised signal ({e:?}).");
+                                warn!(
+                                    "Epoll wait will continue but a failure occurred while reading the raised signal ({e:?})."
+                                );
                                 None
                             }
                         } {

@@ -367,10 +367,7 @@ mod vector {
             assert_that!(sut.push(LifetimeTracker::new_with_value(number)), is_ok);
         }
 
-        assert_that!(
-            sut.resize_with(half_capacity, || LifetimeTracker::new()),
-            is_ok
-        );
+        assert_that!(sut.resize_with(half_capacity, LifetimeTracker::new), is_ok);
         assert_that!(tracker.number_of_living_instances(), eq half_capacity);
 
         assert_that!(sut.len(), eq half_capacity);
@@ -408,7 +405,7 @@ mod vector {
     fn resize_with_fails_if_len_greater_than_capacity<Factory: VectorTestFactory>() {
         let factory = Factory::new();
         let mut sut = factory.create_sut();
-        assert_that!(sut.resize_with(SUT_CAPACITY + 1, || LifetimeTracker::new()), eq Err(VectorModificationError::InsertWouldExceedCapacity));
+        assert_that!(sut.resize_with(SUT_CAPACITY + 1, LifetimeTracker::new), eq Err(VectorModificationError::InsertWouldExceedCapacity));
     }
 
     #[test]

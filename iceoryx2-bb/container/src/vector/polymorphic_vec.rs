@@ -64,8 +64,8 @@ use core::{
 use iceoryx2_bb_elementary_traits::allocator::{AllocationError, BaseAllocator};
 use iceoryx2_log::fail;
 
-use crate::vector::internal;
 pub use crate::vector::Vector;
+use crate::vector::internal;
 
 /// Runtime fixed-size vector variant with a polymorphic allocator, meaning an
 /// allocator with a state can be attached to the vector instead of using a
@@ -189,7 +189,7 @@ impl<'a, T, Allocator: BaseAllocator> PolymorphicVec<'a, T, Allocator> {
     }
 }
 
-impl<'a, T: Clone, Allocator: BaseAllocator> PolymorphicVec<'a, T, Allocator> {
+impl<T: Clone, Allocator: BaseAllocator> PolymorphicVec<'_, T, Allocator> {
     /// Same as clone but it can fail when the required memory could not be
     /// allocated from the [`BaseAllocator`].
     pub fn try_clone(&self) -> Result<Self, AllocationError> {

@@ -16,7 +16,7 @@ extern crate iceoryx2_bb_loggers;
 pub mod tests {
 
     use std::{
-        sync::{atomic::Ordering, Barrier},
+        sync::{Barrier, atomic::Ordering},
         time::Instant,
     };
 

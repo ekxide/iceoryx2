@@ -25,19 +25,20 @@ use windows_sys::Win32::Foundation::ERROR_INVALID_HANDLE;
 use iceoryx2_pal_concurrency_sync::atomic::AtomicU32;
 use iceoryx2_pal_concurrency_sync::cell::UnsafeCell;
 use iceoryx2_pal_concurrency_sync::rwlock::*;
-use iceoryx2_pal_concurrency_sync::{barrier::Barrier, mutex::Mutex};
 use iceoryx2_pal_concurrency_sync::{WaitAction, WaitResult};
+use iceoryx2_pal_concurrency_sync::{barrier::Barrier, mutex::Mutex};
 use windows_sys::Win32::{
     Foundation::{CloseHandle, ERROR_TIMEOUT, FALSE, STILL_ACTIVE},
     System::{
         Memory::LocalFree,
         Threading::{
             CreateThread, GetCurrentThread, GetCurrentThreadId, GetExitCodeThread,
-            GetThreadDescription, GetThreadId, SetThreadAffinityMask, SetThreadDescription,
-            SetThreadPriority, TerminateThread, WaitForSingleObject, WaitOnAddress,
-            WakeByAddressAll, WakeByAddressSingle, INFINITE, THREAD_PRIORITY_ABOVE_NORMAL,
+            GetThreadDescription, GetThreadId, INFINITE, SetThreadAffinityMask,
+            SetThreadDescription, SetThreadPriority, THREAD_PRIORITY_ABOVE_NORMAL,
             THREAD_PRIORITY_BELOW_NORMAL, THREAD_PRIORITY_HIGHEST, THREAD_PRIORITY_IDLE,
             THREAD_PRIORITY_LOWEST, THREAD_PRIORITY_NORMAL, THREAD_PRIORITY_TIME_CRITICAL,
+            TerminateThread, WaitForSingleObject, WaitOnAddress, WakeByAddressAll,
+            WakeByAddressSingle,
         },
     },
 };
@@ -117,7 +118,10 @@ impl ThreadStates {
         self.unlock();
 
         if index == usize::MAX {
-            panic!("With this thread the maximum number of supported thread ({}) of the system is exceeded.", MAX_NUMBER_OF_THREADS);
+            panic!(
+                "With this thread the maximum number of supported thread ({}) of the system is exceeded.",
+                MAX_NUMBER_OF_THREADS
+            );
         }
         index
     }

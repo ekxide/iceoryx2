@@ -13,10 +13,10 @@
 extern crate iceoryx2_bb_loggers;
 
 use core::mem::MaybeUninit;
-use iceoryx2_bb_container::vector::{static_vec::*, VectorModificationError};
+use iceoryx2_bb_container::vector::{VectorModificationError, static_vec::*};
 use iceoryx2_bb_elementary_traits::placement_default::PlacementDefault;
 use iceoryx2_bb_testing::{assert_that, lifetime_tracker::LifetimeTracker};
-use serde_test::{assert_tokens, Token};
+use serde_test::{Token, assert_tokens};
 
 const SUT_CAPACITY: usize = 10;
 

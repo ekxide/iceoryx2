@@ -14,7 +14,7 @@ extern crate iceoryx2_bb_loggers;
 
 #[cfg(target_os = "linux")]
 pub mod tests {
-    use std::sync::{atomic::Ordering, Barrier};
+    use std::sync::{Barrier, atomic::Ordering};
 
     use iceoryx2_bb_concurrency::atomic::AtomicU64;
     use iceoryx2_bb_linux::signalfd::SignalFdBuilder;

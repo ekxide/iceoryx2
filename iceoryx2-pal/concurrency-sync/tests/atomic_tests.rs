@@ -18,7 +18,7 @@ static COUNTER: AtomicU32 = AtomicU32::new(0);
 mod ice_atomic {
     use super::*;
 
-    use iceoryx2_pal_concurrency_sync::atomic::{internal::AtomicInteger, Atomic};
+    use iceoryx2_pal_concurrency_sync::atomic::{Atomic, internal::AtomicInteger};
     use iceoryx2_pal_testing::assert_that;
 
     use core::{

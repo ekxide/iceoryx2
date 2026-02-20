@@ -17,7 +17,7 @@ use core::time::Duration;
 use std::sync::Barrier;
 use std::thread;
 
-use iceoryx2_bb_posix::clock::{nanosleep, Time};
+use iceoryx2_bb_posix::clock::{Time, nanosleep};
 use iceoryx2_bb_posix::mutex::MutexHandle;
 use iceoryx2_bb_posix::semaphore::*;
 use iceoryx2_bb_testing::assert_that;

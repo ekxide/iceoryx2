@@ -15,19 +15,19 @@
 use super::iox2_type_variant_e;
 use crate::create_type_details;
 use crate::{
-    api::{
-        c_size_t, iox2_entry_handle_h, iox2_entry_handle_t, iox2_service_type_e,
-        iox2_unique_reader_id_h, iox2_unique_reader_id_t, AssertNonNullHandle, EntryHandleUnion,
-        HandleToType, IntoCInt, KeyFfi,
-    },
     IOX2_OK,
+    api::{
+        AssertNonNullHandle, EntryHandleUnion, HandleToType, IntoCInt, KeyFfi, c_size_t,
+        iox2_entry_handle_h, iox2_entry_handle_t, iox2_service_type_e, iox2_unique_reader_id_h,
+        iox2_unique_reader_id_t,
+    },
 };
 use core::ffi::{c_char, c_int, c_void};
 use core::mem::ManuallyDrop;
 use iceoryx2::port::reader::{EntryHandleError, Reader};
 use iceoryx2_bb_elementary::static_assert::*;
 use iceoryx2_bb_elementary_traits::AsCStr;
-use iceoryx2_ffi_macros::{iceoryx2_ffi, CStrRepr};
+use iceoryx2_ffi_macros::{CStrRepr, iceoryx2_ffi};
 
 // BEGIN types definition
 
@@ -145,7 +145,7 @@ impl HandleToType for iox2_reader_h_ref {
 /// # Safety
 ///
 /// The returned pointer must not be modified or freed and is valid as long as the program runs.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_entry_handle_error_string(
     error: iox2_entry_handle_error_e,
 ) -> *const c_char {
@@ -165,33 +165,35 @@ pub unsafe extern "C" fn iox2_entry_handle_error_string(
 ///
 /// * `reader_handle` is valid, non-null and was obtained via [`iox2_port_factory_reader_builder_create`](crate::iox2_port_factory_reader_builder_create)
 /// * `id` is valid and non-null
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_reader_id(
     reader_handle: iox2_reader_h_ref,
     id_struct_ptr: *mut iox2_unique_reader_id_t,
     id_handle_ptr: *mut iox2_unique_reader_id_h,
 ) {
-    reader_handle.assert_non_null();
-    debug_assert!(!id_handle_ptr.is_null());
+    unsafe {
+        reader_handle.assert_non_null();
+        debug_assert!(!id_handle_ptr.is_null());
 
-    fn no_op(_: *mut iox2_unique_reader_id_t) {}
-    let mut deleter: fn(*mut iox2_unique_reader_id_t) = no_op;
-    let mut storage_ptr = id_struct_ptr;
-    if id_struct_ptr.is_null() {
-        deleter = iox2_unique_reader_id_t::dealloc;
-        storage_ptr = iox2_unique_reader_id_t::alloc();
+        fn no_op(_: *mut iox2_unique_reader_id_t) {}
+        let mut deleter: fn(*mut iox2_unique_reader_id_t) = no_op;
+        let mut storage_ptr = id_struct_ptr;
+        if id_struct_ptr.is_null() {
+            deleter = iox2_unique_reader_id_t::dealloc;
+            storage_ptr = iox2_unique_reader_id_t::alloc();
+        }
+        debug_assert!(!storage_ptr.is_null());
+
+        let reader = &mut *reader_handle.as_type();
+
+        let id = match reader.service_type {
+            iox2_service_type_e::IPC => reader.value.as_mut().ipc.id(),
+            iox2_service_type_e::LOCAL => reader.value.as_mut().local.id(),
+        };
+
+        (*storage_ptr).init(id, deleter);
+        *id_handle_ptr = (*storage_ptr).as_handle();
     }
-    debug_assert!(!storage_ptr.is_null());
-
-    let reader = &mut *reader_handle.as_type();
-
-    let id = match reader.service_type {
-        iox2_service_type_e::IPC => reader.value.as_mut().ipc.id(),
-        iox2_service_type_e::LOCAL => reader.value.as_mut().local.id(),
-    };
-
-    (*storage_ptr).init(id, deleter);
-    *id_handle_ptr = (*storage_ptr).as_handle();
 }
 
 /// Acquires an entry handle for direct read access to the stored value.
@@ -211,7 +213,7 @@ pub unsafe extern "C" fn iox2_reader_id(
 ///
 /// * `reader_handle` must be non-null and valid
 /// * `entry_handle_handle_ptr` must be non-null and valid
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_reader_entry(
     reader_handle: iox2_reader_h_ref,
     entry_handle_struct_ptr: *mut iox2_entry_handle_t,
@@ -222,78 +224,80 @@ pub unsafe extern "C" fn iox2_reader_entry(
     value_size: c_size_t,
     value_alignment: c_size_t,
 ) -> c_int {
-    reader_handle.assert_non_null();
-    debug_assert!(!entry_handle_handle_ptr.is_null());
+    unsafe {
+        reader_handle.assert_non_null();
+        debug_assert!(!entry_handle_handle_ptr.is_null());
 
-    let init_entry_handle_struct_ptr = |entry_struct_ptr: *mut iox2_entry_handle_t| {
-        let mut entry_handle_struct_ptr = entry_struct_ptr;
-        fn no_op(_: *mut iox2_entry_handle_t) {}
-        let mut deleter: fn(*mut iox2_entry_handle_t) = no_op;
-        if entry_handle_struct_ptr.is_null() {
-            entry_handle_struct_ptr = iox2_entry_handle_t::alloc();
-            deleter = iox2_entry_handle_t::dealloc;
-        }
-        debug_assert!(!entry_handle_struct_ptr.is_null());
+        let init_entry_handle_struct_ptr = |entry_struct_ptr: *mut iox2_entry_handle_t| {
+            let mut entry_handle_struct_ptr = entry_struct_ptr;
+            fn no_op(_: *mut iox2_entry_handle_t) {}
+            let mut deleter: fn(*mut iox2_entry_handle_t) = no_op;
+            if entry_handle_struct_ptr.is_null() {
+                entry_handle_struct_ptr = iox2_entry_handle_t::alloc();
+                deleter = iox2_entry_handle_t::dealloc;
+            }
+            debug_assert!(!entry_handle_struct_ptr.is_null());
 
-        (entry_handle_struct_ptr, deleter)
-    };
+            (entry_handle_struct_ptr, deleter)
+        };
 
-    let value_type_details = match create_type_details(
-        iox2_type_variant_e::FIXED_SIZE,
-        value_type_name_str,
-        value_type_name_len,
-        value_size,
-        value_alignment,
-    ) {
-        Ok(v) => v,
-        Err(e) => return e,
-    };
-    let reader = &mut *reader_handle.as_type();
+        let value_type_details = match create_type_details(
+            iox2_type_variant_e::FIXED_SIZE,
+            value_type_name_str,
+            value_type_name_len,
+            value_size,
+            value_alignment,
+        ) {
+            Ok(v) => v,
+            Err(e) => return e,
+        };
+        let reader = &mut *reader_handle.as_type();
 
-    match reader.service_type {
-        iox2_service_type_e::IPC => {
-            match reader
-                .value
-                .as_ref()
-                .ipc
-                .__internal_entry(key as *const u8, &value_type_details)
-            {
-                Ok(handle) => {
-                    let (entry_handle_struct_ptr, deleter) =
-                        init_entry_handle_struct_ptr(entry_handle_struct_ptr);
-                    (*entry_handle_struct_ptr).init(
-                        reader.service_type,
-                        EntryHandleUnion::new_ipc(handle),
-                        deleter,
-                    );
-                    *entry_handle_handle_ptr = (*entry_handle_struct_ptr).as_handle();
+        match reader.service_type {
+            iox2_service_type_e::IPC => {
+                match reader
+                    .value
+                    .as_ref()
+                    .ipc
+                    .__internal_entry(key as *const u8, &value_type_details)
+                {
+                    Ok(handle) => {
+                        let (entry_handle_struct_ptr, deleter) =
+                            init_entry_handle_struct_ptr(entry_handle_struct_ptr);
+                        (*entry_handle_struct_ptr).init(
+                            reader.service_type,
+                            EntryHandleUnion::new_ipc(handle),
+                            deleter,
+                        );
+                        *entry_handle_handle_ptr = (*entry_handle_struct_ptr).as_handle();
+                    }
+                    Err(error) => return error.into_c_int(),
                 }
-                Err(error) => return error.into_c_int(),
+            }
+            iox2_service_type_e::LOCAL => {
+                match reader
+                    .value
+                    .as_ref()
+                    .local
+                    .__internal_entry(key as *const u8, &value_type_details)
+                {
+                    Ok(handle) => {
+                        let (entry_handle_struct_ptr, deleter) =
+                            init_entry_handle_struct_ptr(entry_handle_struct_ptr);
+                        (*entry_handle_struct_ptr).init(
+                            reader.service_type,
+                            EntryHandleUnion::new_local(handle),
+                            deleter,
+                        );
+                        *entry_handle_handle_ptr = (*entry_handle_struct_ptr).as_handle();
+                    }
+                    Err(error) => return error.into_c_int(),
+                }
             }
         }
-        iox2_service_type_e::LOCAL => {
-            match reader
-                .value
-                .as_ref()
-                .local
-                .__internal_entry(key as *const u8, &value_type_details)
-            {
-                Ok(handle) => {
-                    let (entry_handle_struct_ptr, deleter) =
-                        init_entry_handle_struct_ptr(entry_handle_struct_ptr);
-                    (*entry_handle_struct_ptr).init(
-                        reader.service_type,
-                        EntryHandleUnion::new_local(handle),
-                        deleter,
-                    );
-                    *entry_handle_handle_ptr = (*entry_handle_struct_ptr).as_handle();
-                }
-                Err(error) => return error.into_c_int(),
-            }
-        }
+
+        IOX2_OK
     }
-
-    IOX2_OK
 }
 
 /// This function needs to be called to destroy the reader!
@@ -307,20 +311,22 @@ pub unsafe extern "C" fn iox2_reader_entry(
 /// * The `reader_handle` is invalid after the return of this function and leads to undefined behavior if used in another function call!
 /// * The corresponding [`iox2_reader_t`] can be re-used with a call to
 ///   [`iox2_port_factory_reader_builder_create`](crate::iox2_port_factory_reader_builder_create)!
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_reader_drop(reader_handle: iox2_reader_h) {
-    reader_handle.assert_non_null();
+    unsafe {
+        reader_handle.assert_non_null();
 
-    let reader = &mut *reader_handle.as_type();
+        let reader = &mut *reader_handle.as_type();
 
-    match reader.service_type {
-        iox2_service_type_e::IPC => {
-            ManuallyDrop::drop(&mut reader.value.as_mut().ipc);
+        match reader.service_type {
+            iox2_service_type_e::IPC => {
+                ManuallyDrop::drop(&mut reader.value.as_mut().ipc);
+            }
+            iox2_service_type_e::LOCAL => {
+                ManuallyDrop::drop(&mut reader.value.as_mut().local);
+            }
         }
-        iox2_service_type_e::LOCAL => {
-            ManuallyDrop::drop(&mut reader.value.as_mut().local);
-        }
+        (reader.deleter)(reader);
     }
-    (reader.deleter)(reader);
 }
 // END C API

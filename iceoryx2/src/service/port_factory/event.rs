@@ -40,8 +40,8 @@ use iceoryx2_cal::dynamic_storage::DynamicStorage;
 use crate::node::NodeListFailure;
 use crate::service::attribute::AttributeSet;
 use crate::service::service_id::ServiceId;
-use crate::service::{self, static_config, NoResource, ServiceState};
-use crate::service::{dynamic_config, ServiceName};
+use crate::service::{self, NoResource, ServiceState, static_config};
+use crate::service::{ServiceName, dynamic_config};
 
 use super::listener::PortFactoryListener;
 use super::nodes;

@@ -10,15 +10,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::collections::btree_map::Entry;
 use alloc::collections::BTreeMap;
 use alloc::collections::BTreeSet;
+use alloc::collections::btree_map::Entry;
 use alloc::vec::Vec;
 
 use iceoryx2::{
     config::Config,
     prelude::CallbackProgression,
-    service::{service_id::ServiceId, Service, ServiceDetails, ServiceListError},
+    service::{Service, ServiceDetails, ServiceListError, service_id::ServiceId},
 };
 
 /// Errors that can occur during service synchronization.

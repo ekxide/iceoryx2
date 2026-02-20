@@ -26,8 +26,8 @@ use iceoryx2_cal::testing::*;
 #[test]
 fn static_storage_file_custom_suffix_works() {
     let storage_name = generate_name();
-    let config = generate_isolated_config::<Storage>()
-        .suffix(unsafe { &FileName::new_unchecked(b".blubbme") });
+    let file_name = { unsafe { &FileName::new_unchecked(b".blubbme") } };
+    let config = generate_isolated_config::<Storage>().suffix(file_name);
 
     let content = "some storage content".to_string();
 
@@ -58,11 +58,10 @@ fn static_storage_file_path_is_created_when_it_does_not_exist() {
     let storage_name = generate_name();
     let config = generate_isolated_config::<Storage>();
     let content = "some more funky content".to_string();
-    let non_existing_path = FilePath::from_path_and_file(&TEST_DIRECTORY, &generate_name())
-        .unwrap()
-        .clone();
+    let non_existing_path =
+        FilePath::from_path_and_file(&TEST_DIRECTORY, &generate_name()).unwrap();
 
-    Directory::remove(&non_existing_path.clone().into()).ok();
+    Directory::remove(&non_existing_path.into()).ok();
     let config = config.path_hint(&non_existing_path.into());
 
     let storage_guard = Builder::new(&storage_name)
@@ -89,8 +88,9 @@ fn static_storage_file_path_is_created_when_it_does_not_exist() {
 #[test]
 fn static_storage_file_custom_path_and_suffix_list_storage_works() {
     const NUMBER_OF_STORAGES: u64 = 12;
+    let file_name = { unsafe { &FileName::new_unchecked(b".blubbme") } };
     let config = generate_isolated_config::<Storage>()
-        .suffix(unsafe { &FileName::new_unchecked(b".blubbme") })
+        .suffix(file_name)
         .path_hint(
             &FilePath::from_path_and_file(
                 &TEST_DIRECTORY,

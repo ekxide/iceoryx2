@@ -27,28 +27,30 @@ pub type iox2_server_details_ptr = *const ServerDetails;
 /// * `id_struct_ptr` - Must be either a NULL pointer or a pointer to a valid [`iox2_unique_server_id_t`].
 ///   If it is a NULL pointer, the storage will be allocated on the heap.
 /// * `id_handle_ptr` valid pointer to a [`iox2_unique_server_id_h`].
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_server_details_server_id(
     handle: iox2_server_details_ptr,
     id_struct_ptr: *mut iox2_unique_server_id_t,
     id_handle_ptr: *mut iox2_unique_server_id_h,
 ) {
-    debug_assert!(!handle.is_null());
-    debug_assert!(!id_handle_ptr.is_null());
+    unsafe {
+        debug_assert!(!handle.is_null());
+        debug_assert!(!id_handle_ptr.is_null());
 
-    fn no_op(_: *mut iox2_unique_server_id_t) {}
-    let mut deleter: fn(*mut iox2_unique_server_id_t) = no_op;
-    let mut storage_ptr = id_struct_ptr;
-    if id_struct_ptr.is_null() {
-        deleter = iox2_unique_server_id_t::dealloc;
-        storage_ptr = iox2_unique_server_id_t::alloc();
+        fn no_op(_: *mut iox2_unique_server_id_t) {}
+        let mut deleter: fn(*mut iox2_unique_server_id_t) = no_op;
+        let mut storage_ptr = id_struct_ptr;
+        if id_struct_ptr.is_null() {
+            deleter = iox2_unique_server_id_t::dealloc;
+            storage_ptr = iox2_unique_server_id_t::alloc();
+        }
+        debug_assert!(!storage_ptr.is_null());
+
+        let id = (*handle).server_id;
+
+        (*storage_ptr).init(id, deleter);
+        *id_handle_ptr = (*storage_ptr).as_handle();
     }
-    debug_assert!(!storage_ptr.is_null());
-
-    let id = (*handle).server_id;
-
-    (*storage_ptr).init(id, deleter);
-    *id_handle_ptr = (*storage_ptr).as_handle();
 }
 
 /// Returns the [`iox2_node_id_ptr`](crate::iox2_node_id_ptr), an immutable pointer to the node id.
@@ -56,13 +58,15 @@ pub unsafe extern "C" fn iox2_server_details_server_id(
 /// # Safety
 ///
 /// * `handle` valid pointer to the server details
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_server_details_node_id(
     handle: iox2_server_details_ptr,
 ) -> iox2_node_id_ptr {
-    debug_assert!(!handle.is_null());
+    unsafe {
+        debug_assert!(!handle.is_null());
 
-    &(*handle).node_id
+        &(*handle).node_id
+    }
 }
 
 /// Returns the receive buffer size for incoming requests.
@@ -70,13 +74,15 @@ pub unsafe extern "C" fn iox2_server_details_node_id(
 /// # Safety
 ///
 /// * `handle` valid pointer to the server details
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_server_details_request_buffer_size(
     handle: iox2_server_details_ptr,
 ) -> c_size_t {
-    debug_assert!(!handle.is_null());
+    unsafe {
+        debug_assert!(!handle.is_null());
 
-    (*handle).request_buffer_size as _
+        (*handle).request_buffer_size as _
+    }
 }
 
 /// Returns the total number of responses available in the
@@ -85,13 +91,15 @@ pub unsafe extern "C" fn iox2_server_details_request_buffer_size(
 /// # Safety
 ///
 /// * `handle` valid pointer to the server details
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_server_details_number_of_responses(
     handle: iox2_server_details_ptr,
 ) -> c_size_t {
-    debug_assert!(!handle.is_null());
+    unsafe {
+        debug_assert!(!handle.is_null());
 
-    (*handle).number_of_responses as _
+        (*handle).number_of_responses as _
+    }
 }
 
 /// The current maximum length of a slice.
@@ -99,11 +107,13 @@ pub unsafe extern "C" fn iox2_server_details_number_of_responses(
 /// # Safety
 ///
 /// * `handle` valid pointer to the server details
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn iox2_server_details_max_slice_len(
     handle: iox2_server_details_ptr,
 ) -> c_size_t {
-    debug_assert!(!handle.is_null());
+    unsafe {
+        debug_assert!(!handle.is_null());
 
-    (*handle).max_slice_len as _
+        (*handle).max_slice_len as _
+    }
 }

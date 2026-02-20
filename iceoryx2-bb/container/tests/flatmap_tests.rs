@@ -13,8 +13,8 @@
 extern crate iceoryx2_bb_loggers;
 
 use iceoryx2_bb_container::flatmap::*;
-use iceoryx2_bb_elementary::bump_allocator::BumpAllocator;
 use iceoryx2_bb_elementary::CallbackProgression;
+use iceoryx2_bb_elementary::bump_allocator::BumpAllocator;
 use iceoryx2_bb_elementary_traits::placement_default::PlacementDefault;
 use iceoryx2_bb_testing::assert_that;
 use iceoryx2_bb_testing::lifetime_tracker::LifetimeTracker;
@@ -249,7 +249,7 @@ mod flat_map {
         });
         assert_that!(listed_keys, len CAPA);
         for k in &keys {
-            assert_that!(listed_keys.contains(&k), eq true);
+            assert_that!(listed_keys.contains(k), eq true);
         }
 
         listed_keys.clear();

@@ -14,7 +14,7 @@ use core::hint::spin_loop;
 
 use crate::atomic::AtomicU32;
 use crate::atomic::Ordering;
-use crate::{WaitAction, WaitResult, SPIN_REPETITIONS};
+use crate::{SPIN_REPETITIONS, WaitAction, WaitResult};
 
 pub struct Semaphore {
     value: AtomicU32,

@@ -20,7 +20,7 @@ mod shm_allocator_pool_allocator {
     use iceoryx2_bb_memory::bump_allocator::BumpAllocator;
     use iceoryx2_bb_testing::assert_that;
     use iceoryx2_cal::{
-        shm_allocator::{pool_allocator::*, AllocationStrategy, ShmAllocationError, ShmAllocator},
+        shm_allocator::{AllocationStrategy, ShmAllocationError, ShmAllocator, pool_allocator::*},
         zero_copy_connection::PointerOffset,
     };
 

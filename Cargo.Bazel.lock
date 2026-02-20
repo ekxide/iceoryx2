@@ -1,5 +1,5 @@
 {
-  "checksum": "b4910fb55ff245cb45c163b96d52bf047a1fbddfe094de0f19d238b9426850c2",
+  "checksum": "36491a99f42086f97b891c08049c41dc4b6655c81ae40517b7b24a16cbefefea",
   "crates": {
     "addr2line 0.24.2": {
       "name": "addr2line",
@@ -1369,7 +1369,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -1399,7 +1399,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -1429,7 +1429,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -1459,7 +1459,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -1520,14 +1520,14 @@
       ],
       "license_file": "LICENSE"
     },
-    "bindgen 0.72.0": {
+    "bindgen 0.72.1": {
       "name": "bindgen",
-      "version": "0.72.0",
+      "version": "0.72.1",
       "package_url": "https://github.com/rust-lang/rust-bindgen",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/bindgen/0.72.0/download",
-          "sha256": "4f72209734318d0b619a5e0f5129918b848c416e122a3c4ce054e03cb87b726f"
+          "url": "https://static.crates.io/crates/bindgen/0.72.1/download",
+          "sha256": "993776b509cfb49c750f11b8f07a46fa23e0a1386ffc01fb1e7d343efc387895"
         }
       },
       "targets": [
@@ -1573,7 +1573,7 @@
         "deps": {
           "common": [
             {
-              "id": "bindgen 0.72.0",
+              "id": "bindgen 0.72.1",
               "target": "build_script_build"
             },
             {
@@ -1628,7 +1628,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.72.0"
+        "version": "0.72.1"
       },
       "build_script_attrs": {
         "compile_data_glob": [
@@ -3119,7 +3119,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -5516,7 +5516,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8075,7 +8075,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8116,7 +8116,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8167,7 +8167,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8219,7 +8219,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -8279,7 +8279,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8313,7 +8313,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -8356,7 +8356,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8390,7 +8390,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8435,7 +8435,7 @@
             ]
           }
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -8507,7 +8507,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "build_script_attrs": {
@@ -8552,7 +8552,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8610,7 +8610,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -8660,7 +8660,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8703,7 +8703,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8737,7 +8737,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8771,7 +8771,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -8805,7 +8805,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -8880,7 +8880,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -8945,7 +8945,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9064,7 +9064,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9105,7 +9105,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9167,7 +9167,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -9247,7 +9247,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9271,13 +9271,13 @@
         "deps": {
           "common": [
             {
-              "id": "pyo3 0.25.0",
+              "id": "pyo3 0.28.2",
               "target": "pyo3"
             }
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9318,7 +9318,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9352,7 +9352,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9404,7 +9404,7 @@
             ]
           }
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -9468,7 +9468,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "build_script_attrs": {
@@ -9522,7 +9522,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9602,7 +9602,7 @@
             ]
           }
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "build_script_attrs": {
@@ -9618,7 +9618,7 @@
         "deps": {
           "common": [
             {
-              "id": "bindgen 0.72.0",
+              "id": "bindgen 0.72.1",
               "target": "bindgen"
             },
             {
@@ -9667,7 +9667,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9701,7 +9701,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9751,7 +9751,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -9801,7 +9801,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "proc_macro_deps_dev": {
           "common": [
             {
@@ -9844,7 +9844,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9878,7 +9878,7 @@
         "compile_data_glob": [
           "**"
         ],
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9921,7 +9921,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -9968,7 +9968,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -10015,7 +10015,7 @@
           ],
           "selects": {}
         },
-        "edition": "2021",
+        "edition": "2024",
         "version": "0.8.999"
       },
       "license": "MIT OR Apache-2.0",
@@ -11072,45 +11072,6 @@
         "version": "2.13.0"
       },
       "license": "Apache-2.0 OR MIT",
-      "license_ids": [
-        "Apache-2.0",
-        "MIT"
-      ],
-      "license_file": "LICENSE-APACHE"
-    },
-    "indoc 2.0.6": {
-      "name": "indoc",
-      "version": "2.0.6",
-      "package_url": "https://github.com/dtolnay/indoc",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/indoc/2.0.6/download",
-          "sha256": "f4c7245a08504955605670dbf141fceab975f15ca21570696aebe9d2e71576bd"
-        }
-      },
-      "targets": [
-        {
-          "ProcMacro": {
-            "crate_name": "indoc",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "indoc",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "edition": "2021",
-        "version": "2.0.6"
-      },
-      "license": "MIT OR Apache-2.0",
       "license_ids": [
         "Apache-2.0",
         "MIT"
@@ -12499,91 +12460,6 @@
       ],
       "license_file": "LICENSE-MIT"
     },
-    "memoffset 0.9.1": {
-      "name": "memoffset",
-      "version": "0.9.1",
-      "package_url": "https://github.com/Gilnaa/memoffset",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/memoffset/0.9.1/download",
-          "sha256": "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "memoffset",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "memoffset",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "default"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "memoffset 0.9.1",
-              "target": "build_script_build"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2015",
-        "version": "0.9.1"
-      },
-      "build_script_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "compile_data_glob_excludes": [
-          "**/*.rs"
-        ],
-        "data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "autocfg 1.4.0",
-              "target": "autocfg"
-            }
-          ],
-          "selects": {}
-        }
-      },
-      "license": "MIT",
-      "license_ids": [
-        "MIT"
-      ],
-      "license_file": "LICENSE"
-    },
     "minimal-lexical 0.2.1": {
       "name": "minimal-lexical",
       "version": "0.2.1",
@@ -13124,7 +13000,7 @@
           "selects": {
             "cfg(windows)": [
               {
-                "id": "windows-sys 0.59.0",
+                "id": "windows-sys 0.61.2",
                 "target": "windows_sys",
                 "alias": "windows"
               }
@@ -15534,14 +15410,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "pyo3 0.25.0": {
+    "pyo3 0.28.2": {
       "name": "pyo3",
-      "version": "0.25.0",
+      "version": "0.28.2",
       "package_url": "https://github.com/pyo3/pyo3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/pyo3/0.25.0/download",
-          "sha256": "f239d656363bcee73afef85277f1b281e8ac6212a1d42aa90e55b90ed43c47a4"
+          "url": "https://static.crates.io/crates/pyo3/0.28.2/download",
+          "sha256": "cf85e27e86080aafd5a22eae58a162e133a589551542b3e5cee4beb27e54f8e1"
         }
       },
       "targets": [
@@ -15586,10 +15462,8 @@
             "abi3-py38",
             "abi3-py39",
             "default",
-            "indoc",
             "macros",
-            "pyo3-macros",
-            "unindent"
+            "pyo3-macros"
           ],
           "selects": {}
         },
@@ -15600,24 +15474,16 @@
               "target": "libc"
             },
             {
-              "id": "memoffset 0.9.1",
-              "target": "memoffset"
-            },
-            {
               "id": "once_cell 1.21.3",
               "target": "once_cell"
             },
             {
-              "id": "pyo3 0.25.0",
+              "id": "pyo3 0.28.2",
               "target": "build_script_build"
             },
             {
-              "id": "pyo3-ffi 0.25.0",
+              "id": "pyo3-ffi 0.28.2",
               "target": "pyo3_ffi"
-            },
-            {
-              "id": "unindent 0.2.4",
-              "target": "unindent"
             }
           ],
           "selects": {
@@ -15633,17 +15499,13 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "indoc 2.0.6",
-              "target": "indoc"
-            },
-            {
-              "id": "pyo3-macros 0.25.0",
+              "id": "pyo3-macros 0.28.2",
               "target": "pyo3_macros"
             }
           ],
           "selects": {}
         },
-        "version": "0.25.0"
+        "version": "0.28.2"
       },
       "build_script_attrs": {
         "compile_data_glob": [
@@ -15658,7 +15520,7 @@
         "deps": {
           "common": [
             {
-              "id": "pyo3-build-config 0.25.0",
+              "id": "pyo3-build-config 0.28.2",
               "target": "pyo3_build_config"
             }
           ],
@@ -15667,7 +15529,7 @@
         "link_deps": {
           "common": [
             {
-              "id": "pyo3-ffi 0.25.0",
+              "id": "pyo3-ffi 0.28.2",
               "target": "pyo3_ffi"
             }
           ],
@@ -15681,14 +15543,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "pyo3-build-config 0.25.0": {
+    "pyo3-build-config 0.28.2": {
       "name": "pyo3-build-config",
-      "version": "0.25.0",
+      "version": "0.28.2",
       "package_url": "https://github.com/pyo3/pyo3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/pyo3-build-config/0.25.0/download",
-          "sha256": "755ea671a1c34044fa165247aaf6f419ca39caa6003aee791a0df2713d8f1b6d"
+          "url": "https://static.crates.io/crates/pyo3-build-config/0.28.2/download",
+          "sha256": "8bf94ee265674bf76c09fa430b0e99c26e319c945d96ca0d5a8215f31bf81cf7"
         }
       },
       "targets": [
@@ -15740,22 +15602,18 @@
         "deps": {
           "common": [
             {
-              "id": "once_cell 1.21.3",
-              "target": "once_cell"
-            },
-            {
-              "id": "pyo3-build-config 0.25.0",
+              "id": "pyo3-build-config 0.28.2",
               "target": "build_script_build"
             },
             {
-              "id": "target-lexicon 0.13.2",
+              "id": "target-lexicon 0.13.5",
               "target": "target_lexicon"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.25.0"
+        "version": "0.28.2"
       },
       "build_script_attrs": {
         "compile_data_glob": [
@@ -15770,7 +15628,7 @@
         "deps": {
           "common": [
             {
-              "id": "target-lexicon 0.13.2",
+              "id": "target-lexicon 0.13.5",
               "target": "target_lexicon"
             }
           ],
@@ -15784,14 +15642,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "pyo3-ffi 0.25.0": {
+    "pyo3-ffi 0.28.2": {
       "name": "pyo3-ffi",
-      "version": "0.25.0",
+      "version": "0.28.2",
       "package_url": "https://github.com/pyo3/pyo3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/pyo3-ffi/0.25.0/download",
-          "sha256": "fc95a2e67091e44791d4ea300ff744be5293f394f1bafd9f78c080814d35956e"
+          "url": "https://static.crates.io/crates/pyo3-ffi/0.28.2/download",
+          "sha256": "491aa5fc66d8059dd44a75f4580a2962c1862a1c2945359db36f6c2818b748dc"
         }
       },
       "targets": [
@@ -15846,14 +15704,14 @@
               "target": "libc"
             },
             {
-              "id": "pyo3-ffi 0.25.0",
+              "id": "pyo3-ffi 0.28.2",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.25.0"
+        "version": "0.28.2"
       },
       "build_script_attrs": {
         "compile_data_glob": [
@@ -15868,7 +15726,7 @@
         "deps": {
           "common": [
             {
-              "id": "pyo3-build-config 0.25.0",
+              "id": "pyo3-build-config 0.28.2",
               "target": "pyo3_build_config"
             }
           ],
@@ -15883,14 +15741,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "pyo3-macros 0.25.0": {
+    "pyo3-macros 0.28.2": {
       "name": "pyo3-macros",
-      "version": "0.25.0",
+      "version": "0.28.2",
       "package_url": "https://github.com/pyo3/pyo3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/pyo3-macros/0.25.0/download",
-          "sha256": "a179641d1b93920829a62f15e87c0ed791b6c8db2271ba0fd7c2686090510214"
+          "url": "https://static.crates.io/crates/pyo3-macros/0.28.2/download",
+          "sha256": "f5d671734e9d7a43449f8480f8b38115df67bef8d21f76837fa75ee7aaa5e52e"
         }
       },
       "targets": [
@@ -15919,7 +15777,7 @@
               "target": "proc_macro2"
             },
             {
-              "id": "pyo3-macros-backend 0.25.0",
+              "id": "pyo3-macros-backend 0.28.2",
               "target": "pyo3_macros_backend"
             },
             {
@@ -15934,7 +15792,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.25.0"
+        "version": "0.28.2"
       },
       "license": "MIT OR Apache-2.0",
       "license_ids": [
@@ -15943,14 +15801,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "pyo3-macros-backend 0.25.0": {
+    "pyo3-macros-backend 0.28.2": {
       "name": "pyo3-macros-backend",
-      "version": "0.25.0",
+      "version": "0.28.2",
       "package_url": "https://github.com/pyo3/pyo3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/pyo3-macros-backend/0.25.0/download",
-          "sha256": "9dff85ebcaab8c441b0e3f7ae40a6963ecea8a9f5e74f647e33fcf5ec9a1e89e"
+          "url": "https://static.crates.io/crates/pyo3-macros-backend/0.28.2/download",
+          "sha256": "22faaa1ce6c430a1f71658760497291065e6450d7b5dc2bcf254d49f66ee700a"
         }
       },
       "targets": [
@@ -15995,11 +15853,11 @@
               "target": "proc_macro2"
             },
             {
-              "id": "pyo3-build-config 0.25.0",
+              "id": "pyo3-build-config 0.28.2",
               "target": "pyo3_build_config"
             },
             {
-              "id": "pyo3-macros-backend 0.25.0",
+              "id": "pyo3-macros-backend 0.28.2",
               "target": "build_script_build"
             },
             {
@@ -16014,7 +15872,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.25.0"
+        "version": "0.28.2"
       },
       "build_script_attrs": {
         "compile_data_glob": [
@@ -16029,7 +15887,7 @@
         "deps": {
           "common": [
             {
-              "id": "pyo3-build-config 0.25.0",
+              "id": "pyo3-build-config 0.28.2",
               "target": "pyo3_build_config"
             }
           ],
@@ -21752,14 +21610,14 @@
       ],
       "license_file": "LICENSE"
     },
-    "target-lexicon 0.13.2": {
+    "target-lexicon 0.13.5": {
       "name": "target-lexicon",
-      "version": "0.13.2",
+      "version": "0.13.5",
       "package_url": "https://github.com/bytecodealliance/target-lexicon",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/target-lexicon/0.13.2/download",
-          "sha256": "e502f78cdbb8ba4718f566c418c52bc729126ffd16baee5baa718cf25dd5a69a"
+          "url": "https://static.crates.io/crates/target-lexicon/0.13.5/download",
+          "sha256": "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
         }
       },
       "targets": [
@@ -21802,14 +21660,14 @@
         "deps": {
           "common": [
             {
-              "id": "target-lexicon 0.13.2",
+              "id": "target-lexicon 0.13.5",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.13.2"
+        "version": "0.13.5"
       },
       "build_script_attrs": {
         "compile_data_glob": [
@@ -24679,45 +24537,6 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "unindent 0.2.4": {
-      "name": "unindent",
-      "version": "0.2.4",
-      "package_url": "https://github.com/dtolnay/indoc",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/unindent/0.2.4/download",
-          "sha256": "7264e107f553ccae879d21fbea1d6724ac785e8c3bfc762137959b5802826ef3"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "unindent",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "unindent",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "edition": "2021",
-        "version": "0.2.4"
-      },
-      "license": "MIT OR Apache-2.0",
-      "license_ids": [
-        "Apache-2.0",
-        "MIT"
-      ],
-      "license_file": "LICENSE-APACHE"
-    },
     "unsafe-libyaml 0.2.11": {
       "name": "unsafe-libyaml",
       "version": "0.2.11",
@@ -27402,6 +27221,7 @@
             "Win32_Storage",
             "Win32_Storage_FileSystem",
             "Win32_System",
+            "Win32_System_Console",
             "Win32_System_IO",
             "Win32_System_Pipes",
             "Win32_System_SystemServices",
@@ -33870,7 +33690,7 @@
   "direct_deps": [
     "anyhow 1.0.100",
     "better-panic 0.3.0",
-    "bindgen 0.72.0",
+    "bindgen 0.72.1",
     "cargo_metadata 0.18.1",
     "cbindgen 0.29.2",
     "cc 1.2.21",
@@ -33883,7 +33703,7 @@
     "libc 0.2.180",
     "postcard 1.1.3",
     "proc-macro2 1.0.105",
-    "pyo3 0.25.0",
+    "pyo3 0.28.2",
     "quote 1.0.43",
     "ron 0.11.0",
     "serde 1.0.228",

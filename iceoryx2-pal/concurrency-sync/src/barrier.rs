@@ -12,9 +12,9 @@
 
 use core::hint::spin_loop;
 
+use crate::SPIN_REPETITIONS;
 use crate::atomic::AtomicU32;
 use crate::atomic::Ordering;
-use crate::SPIN_REPETITIONS;
 
 #[derive(Debug)]
 pub struct Barrier {

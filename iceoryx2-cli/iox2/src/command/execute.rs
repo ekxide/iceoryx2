@@ -10,7 +10,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 
 use crate::command::{
     CommandExecutor, CommandFinder, Environment, HostEnvironment, IceoryxCommandExecutor,
@@ -115,7 +115,10 @@ mod tests {
             let mut paths = env::split_paths(&original_path).collect::<Vec<_>>();
             paths.push(temp_path.clone());
             let new_path = env::join_paths(paths).expect("Failed to join paths");
-            env::set_var("PATH", &new_path);
+
+            unsafe {
+                env::set_var("PATH", &new_path);
+            }
 
             create_file!(temp_path, format!("{}{}", IOX2_PREFIX, FOO_COMMAND));
             create_file!(temp_path, format!("{}{}.d", IOX2_PREFIX, FOO_COMMAND));
@@ -136,7 +139,9 @@ mod tests {
 
     impl Drop for TestEnv {
         fn drop(&mut self) {
-            env::set_var("PATH", &self.original_path);
+            unsafe {
+                env::set_var("PATH", &self.original_path);
+            }
         }
     }
 
@@ -177,7 +182,7 @@ mod tests {
             panic!("Failed to extract CommandInfo of test files");
         };
 
-        let result = IceoryxCommandExecutor::execute(&foo_command, None);
+        let result = IceoryxCommandExecutor::execute(foo_command, None);
         if let Err(ref e) = result {
             println!("Error executing command: {}", e);
         }
@@ -185,7 +190,7 @@ mod tests {
         assert_that!(result, is_ok);
 
         let args = vec!["arg1".to_string(), "arg2".to_string()];
-        let result = IceoryxCommandExecutor::execute(&foo_command, Some(&args));
+        let result = IceoryxCommandExecutor::execute(foo_command, Some(&args));
         assert_that!(result, is_ok);
     }
 }

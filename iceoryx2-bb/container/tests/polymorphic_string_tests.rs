@@ -35,7 +35,7 @@ impl Test {
         }
     }
 
-    fn allocator<'a>(&'a self) -> &'a BumpAllocator {
+    fn allocator(&self) -> &BumpAllocator {
         unsafe {
             if (*self.allocator.get()).is_none() {
                 *self.allocator.get() = Some(Box::new(BumpAllocator::new(
@@ -47,10 +47,10 @@ impl Test {
         unsafe { (*self.allocator.get()).as_ref().unwrap() }
     }
 
-    fn create_sut<'a>(
-        &'a self,
+    fn create_sut(
+        &self,
         capacity: usize,
-    ) -> Result<PolymorphicString<'a, BumpAllocator>, AllocationError> {
+    ) -> Result<PolymorphicString<'_, BumpAllocator>, AllocationError> {
         PolymorphicString::new(self.allocator(), capacity)
     }
 }

@@ -17,7 +17,7 @@ use iceoryx2_bb_concurrency::atomic::AtomicUsize;
 use iceoryx2_bb_posix::socket_pair::*;
 use iceoryx2_bb_testing::{assert_that, watchdog::Watchdog};
 use std::{
-    sync::{atomic::Ordering, Barrier},
+    sync::{Barrier, atomic::Ordering},
     time::Instant,
 };
 

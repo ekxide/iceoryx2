@@ -28,7 +28,7 @@ pub mod subscriber {
     use iceoryx2::{
         node::NodeBuilder,
         port::subscriber::SubscriberCreateError,
-        service::{service_name::ServiceName, Service},
+        service::{Service, service_name::ServiceName},
         testing,
     };
     use iceoryx2_bb_posix::unique_system_id::UniqueSystemId;

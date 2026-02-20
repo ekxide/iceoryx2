@@ -11,8 +11,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use iceoryx2::prelude::EventId;
-use iceoryx2::service::static_config::StaticConfig;
 use iceoryx2::service::Service;
+use iceoryx2::service::static_config::StaticConfig;
 use iceoryx2_log::{fail, trace};
 use iceoryx2_tunnel_backend::traits::{EventRelay, RelayBuilder};
 use zenoh::handlers::{FifoChannel, FifoChannelHandler};
@@ -82,7 +82,7 @@ impl<'a, S: Service> Builder<'a, S> {
     }
 }
 
-impl<'a, S: Service> RelayBuilder for Builder<'a, S> {
+impl<S: Service> RelayBuilder for Builder<'_, S> {
     type CreationError = CreationError;
     type Relay = Relay<S>;
 

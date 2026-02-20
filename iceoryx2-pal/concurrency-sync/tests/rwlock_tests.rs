@@ -15,7 +15,7 @@ use core::{
     time::Duration,
 };
 
-use iceoryx2_pal_concurrency_sync::{barrier::Barrier, rwlock::*, WaitAction, WaitResult};
+use iceoryx2_pal_concurrency_sync::{WaitAction, WaitResult, barrier::Barrier, rwlock::*};
 use iceoryx2_pal_testing::assert_that;
 
 const TIMEOUT: Duration = Duration::from_millis(25);

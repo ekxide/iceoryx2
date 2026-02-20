@@ -17,7 +17,7 @@ use core::{
 };
 
 use iceoryx2_pal_concurrency_sync::{
-    barrier::Barrier, condition_variable::*, WaitAction, WaitResult,
+    WaitAction, WaitResult, barrier::Barrier, condition_variable::*,
 };
 use iceoryx2_pal_testing::{assert_that, watchdog::Watchdog};
 

@@ -1082,11 +1082,11 @@ pub mod zero_copy_connection_trait {
 
     #[conformance_test]
     pub fn custom_suffix_keeps_connections_separated<Sut: ZeroCopyConnection>() {
+        let file_name_1 = { unsafe { &FileName::new_unchecked(b".s1") } };
+        let file_name_2 = { unsafe { &FileName::new_unchecked(b".s2") } };
         let config = generate_isolated_config::<Sut>();
-        let config_1 = config
-            .clone()
-            .suffix(unsafe { &FileName::new_unchecked(b".s1") });
-        let config_2 = config.suffix(unsafe { &FileName::new_unchecked(b".s2") });
+        let config_1 = config.clone().suffix(file_name_1);
+        let config_2 = config.suffix(file_name_2);
 
         let sut_name = generate_name();
 

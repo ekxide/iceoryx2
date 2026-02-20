@@ -64,7 +64,7 @@ impl<'a> TestFixture<'a> {
     }
 }
 
-impl<'a> Drop for TestFixture<'a> {
+impl Drop for TestFixture<'_> {
     fn drop(&mut self) {
         File::remove(&self.file_name).expect("");
     }

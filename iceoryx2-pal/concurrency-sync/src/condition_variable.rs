@@ -14,7 +14,7 @@ pub use crate::mutex::Mutex;
 
 use crate::atomic::AtomicU32;
 use crate::atomic::Ordering;
-use crate::{semaphore::Semaphore, WaitAction, WaitResult};
+use crate::{WaitAction, WaitResult, semaphore::Semaphore};
 
 pub struct ConditionVariable {
     number_of_waiters: AtomicU32,

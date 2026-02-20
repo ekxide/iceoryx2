@@ -22,7 +22,7 @@ use iceoryx2_pal_concurrency_sync::atomic::AtomicU32;
 use iceoryx2_pal_concurrency_sync::barrier::Barrier;
 use iceoryx2_pal_concurrency_sync::cell::UnsafeCell;
 use iceoryx2_pal_concurrency_sync::mutex::Mutex;
-use iceoryx2_pal_concurrency_sync::{rwlock::*, WaitAction, WaitResult};
+use iceoryx2_pal_concurrency_sync::{WaitAction, WaitResult, rwlock::*};
 
 #[derive(Clone, Copy)]
 struct ThreadState {
@@ -86,7 +86,9 @@ impl ThreadStates {
         self.unlock();
 
         if index == usize::MAX {
-            panic!("With this thread the maximum number of supported thread ({MAX_NUMBER_OF_THREADS}) of the system is exceeded.");
+            panic!(
+                "With this thread the maximum number of supported thread ({MAX_NUMBER_OF_THREADS}) of the system is exceeded."
+            );
         }
         index
     }

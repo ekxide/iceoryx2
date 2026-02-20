@@ -43,11 +43,11 @@ use super::writer::PortFactoryWriter;
 use crate::constants::MAX_BLACKBOARD_KEY_SIZE;
 use crate::node::NodeListFailure;
 use crate::service::attribute::AttributeSet;
-use crate::service::builder::blackboard::{BlackboardResources, KeyMemory};
 use crate::service::builder::CustomKeyMarker;
+use crate::service::builder::blackboard::{BlackboardResources, KeyMemory};
 use crate::service::service_id::ServiceId;
 use crate::service::service_name::ServiceName;
-use crate::service::{self, dynamic_config, static_config, ServiceState};
+use crate::service::{self, ServiceState, dynamic_config, static_config};
 use core::fmt::Debug;
 use core::hash::Hash;
 use core::marker::PhantomData;
@@ -72,9 +72,9 @@ pub struct PortFactory<
 }
 
 impl<
-        Service: service::Service,
-        KeyType: Send + Sync + Eq + Clone + Copy + Debug + 'static + Hash + ZeroCopySend,
-    > crate::service::port_factory::PortFactory for PortFactory<Service, KeyType>
+    Service: service::Service,
+    KeyType: Send + Sync + Eq + Clone + Copy + Debug + 'static + Hash + ZeroCopySend,
+> crate::service::port_factory::PortFactory for PortFactory<Service, KeyType>
 {
     type Service = Service;
     type StaticConfig = static_config::blackboard::StaticConfig;
@@ -113,9 +113,9 @@ impl<
 }
 
 impl<
-        Service: service::Service,
-        KeyType: Send + Sync + Eq + Clone + Copy + Debug + 'static + Hash + ZeroCopySend,
-    > PortFactory<Service, KeyType>
+    Service: service::Service,
+    KeyType: Send + Sync + Eq + Clone + Copy + Debug + 'static + Hash + ZeroCopySend,
+> PortFactory<Service, KeyType>
 {
     pub(crate) fn new(service: ServiceState<Service, BlackboardResources<Service>>) -> Self {
         Self {

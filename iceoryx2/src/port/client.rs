@@ -78,7 +78,7 @@ use iceoryx2_bb_container::{queue::Queue, slotmap::SlotMap, vector::polymorphic_
 use iceoryx2_bb_concurrency::atomic::Ordering;
 use iceoryx2_bb_concurrency::atomic::{AtomicBool, AtomicU64, AtomicUsize};
 use iceoryx2_bb_concurrency::cell::UnsafeCell;
-use iceoryx2_bb_elementary::{cyclic_tagger::CyclicTagger, CallbackProgression};
+use iceoryx2_bb_elementary::{CallbackProgression, cyclic_tagger::CyclicTagger};
 use iceoryx2_bb_elementary_traits::zero_copy_send::ZeroCopySend;
 use iceoryx2_bb_lock_free::mpmc::container::{ContainerHandle, ContainerState};
 use iceoryx2_bb_memory::heap_allocator::HeapAllocator;
@@ -93,7 +93,7 @@ use iceoryx2_log::{fail, fatal_panic, warn};
 use crate::{
     pending_response::PendingResponse,
     port::{
-        details::data_segment::DataSegment, update_connections::UpdateConnections, UniqueClientId,
+        UniqueClientId, details::data_segment::DataSegment, update_connections::UpdateConnections,
     },
     prelude::{PortFactory, UnableToDeliverStrategy},
     raw_sample::RawSampleMut,
@@ -111,6 +111,7 @@ use crate::{
 };
 
 use super::{
+    LoanError, SendError,
     details::{
         data_segment::DataSegmentType,
         receiver::{Receiver, SenderDetails},
@@ -118,7 +119,6 @@ use super::{
         sender::{ReceiverDetails, Sender},
     },
     update_connections::ConnectionFailure,
-    LoanError, SendError,
 };
 
 /// Failure that can be emitted when a [`RequestMut`] is sent.
@@ -308,36 +308,36 @@ pub struct Client<
 }
 
 unsafe impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend + ?Sized,
-        RequestHeader: Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Send for Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend + ?Sized,
+    RequestHeader: Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Send for Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
 where
     Service::ArcThreadSafetyPolicy<ClientSharedState<Service>>: Send + Sync,
 {
 }
 
 unsafe impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend + ?Sized,
-        RequestHeader: Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Sync for Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend + ?Sized,
+    RequestHeader: Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Sync for Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
 where
     Service::ArcThreadSafetyPolicy<ClientSharedState<Service>>: Send + Sync,
 {
 }
 
 impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend + ?Sized,
-        RequestHeader: Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend + ?Sized,
+    RequestHeader: Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
 {
     pub(crate) fn new(
         client_factory: PortFactoryClient<
@@ -555,12 +555,12 @@ impl<
 }
 
 impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend + ?Sized,
-        RequestHeader: Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > UpdateConnections
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend + ?Sized,
+    RequestHeader: Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> UpdateConnections
     for Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
 {
     fn update_connections(&self) -> Result<(), ConnectionFailure> {
@@ -572,12 +572,12 @@ impl<
 // BEGIN: typed API
 ////////////////////////
 impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend,
-        RequestHeader: Default + Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend,
+    RequestHeader: Default + Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
 {
     /// Acquires an [`RequestMutUninit`] to store payload. This API shall be used
     /// by default to avoid unnecessary copies.
@@ -719,12 +719,12 @@ impl<
 }
 
 impl<
-        Service: service::Service,
-        RequestPayload: Debug + Default + ZeroCopySend,
-        RequestHeader: Default + Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + Default + ZeroCopySend,
+    RequestHeader: Default + Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Client<Service, RequestPayload, RequestHeader, ResponsePayload, ResponseHeader>
 {
     /// Acquires the payload for the request and initializes the underlying memory
     /// with default. This can be very expensive when the payload is large, therefore
@@ -773,12 +773,12 @@ impl<
 // BEGIN: sliced API
 ////////////////////////
 impl<
-        Service: service::Service,
-        RequestPayload: Default + Debug + ZeroCopySend + 'static,
-        RequestHeader: Default + Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Client<Service, [RequestPayload], RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Default + Debug + ZeroCopySend + 'static,
+    RequestHeader: Default + Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Client<Service, [RequestPayload], RequestHeader, ResponsePayload, ResponseHeader>
 {
     /// Loans/allocates a [`RequestMut`] from the underlying data segment of the [`Client`]
     /// and initializes all slice elements with the default value. This can be a performance hit
@@ -828,12 +828,12 @@ impl<
 }
 
 impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend + 'static,
-        RequestHeader: Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Client<Service, [RequestPayload], RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend + 'static,
+    RequestHeader: Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Client<Service, [RequestPayload], RequestHeader, ResponsePayload, ResponseHeader>
 {
     /// Returns the maximum initial slice length configured for this [`Client`].
     pub fn initial_max_slice_len(&self) -> usize {
@@ -842,12 +842,12 @@ impl<
 }
 
 impl<
-        Service: service::Service,
-        RequestPayload: Debug + ZeroCopySend + 'static,
-        RequestHeader: Default + Debug + ZeroCopySend,
-        ResponsePayload: Debug + ZeroCopySend + ?Sized,
-        ResponseHeader: Debug + ZeroCopySend,
-    > Client<Service, [RequestPayload], RequestHeader, ResponsePayload, ResponseHeader>
+    Service: service::Service,
+    RequestPayload: Debug + ZeroCopySend + 'static,
+    RequestHeader: Default + Debug + ZeroCopySend,
+    ResponsePayload: Debug + ZeroCopySend + ?Sized,
+    ResponseHeader: Debug + ZeroCopySend,
+> Client<Service, [RequestPayload], RequestHeader, ResponsePayload, ResponseHeader>
 {
     /// Loans/allocates a [`RequestMutUninit`] from the underlying data segment of the [`Client`].
     /// The user has to initialize the payload before it can be sent.
@@ -1009,18 +1009,20 @@ impl<Service: service::Service>
         >,
         LoanError,
     > {
-        let client_shared_state = self.client_shared_state.lock();
-        // TypeVariant::Dynamic == slice and only here it makes sense to loan more than one element
-        debug_assert!(
-            slice_len == 1
-                || client_shared_state.request_sender.payload_type_variant()
-                    == TypeVariant::Dynamic
-        );
+        unsafe {
+            let client_shared_state = self.client_shared_state.lock();
+            // TypeVariant::Dynamic == slice and only here it makes sense to loan more than one element
+            debug_assert!(
+                slice_len == 1
+                    || client_shared_state.request_sender.payload_type_variant()
+                        == TypeVariant::Dynamic
+            );
 
-        self.loan_slice_uninit_impl(
-            slice_len,
-            client_shared_state.request_sender.payload_size() * slice_len,
-        )
+            self.loan_slice_uninit_impl(
+                slice_len,
+                client_shared_state.request_sender.payload_size() * slice_len,
+            )
+        }
     }
 }
 ////////////////////////

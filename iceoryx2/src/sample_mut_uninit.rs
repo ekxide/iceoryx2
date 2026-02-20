@@ -117,20 +117,20 @@ pub struct SampleMutUninit<
 }
 
 unsafe impl<
-        Service: crate::service::Service,
-        Payload: Debug + ZeroCopySend + ?Sized,
-        UserHeader: ZeroCopySend,
-    > Send for SampleMutUninit<Service, Payload, UserHeader>
+    Service: crate::service::Service,
+    Payload: Debug + ZeroCopySend + ?Sized,
+    UserHeader: ZeroCopySend,
+> Send for SampleMutUninit<Service, Payload, UserHeader>
 where
     Service::ArcThreadSafetyPolicy<PublisherSharedState<Service>>: Send + Sync,
 {
 }
 
 impl<
-        Service: crate::service::Service,
-        Payload: Debug + ZeroCopySend + ?Sized,
-        UserHeader: ZeroCopySend,
-    > SampleMutUninit<Service, Payload, UserHeader>
+    Service: crate::service::Service,
+    Payload: Debug + ZeroCopySend + ?Sized,
+    UserHeader: ZeroCopySend,
+> SampleMutUninit<Service, Payload, UserHeader>
 {
     /// Returns a reference to the [`Header`] of the [`SampleMutUninit`].
     ///
@@ -346,10 +346,12 @@ impl<Service: crate::service::Service, Payload: Debug + ZeroCopySend, UserHeader
     /// # }
     /// ```
     pub unsafe fn assume_init(self) -> SampleMut<Service, Payload, UserHeader> {
-        // the transmute is not nice but safe since MaybeUninit is #[repr(transparent)] to the inner type
-        let initialized_sample = core::mem::transmute_copy(&self.sample);
-        core::mem::forget(self);
-        initialized_sample
+        unsafe {
+            // the transmute is not nice but safe since MaybeUninit is #[repr(transparent)] to the inner type
+            let initialized_sample = core::mem::transmute_copy(&self.sample);
+            core::mem::forget(self);
+            initialized_sample
+        }
     }
 }
 
@@ -409,10 +411,12 @@ impl<Service: crate::service::Service, Payload: Debug + ZeroCopySend, UserHeader
     /// # }
     /// ```
     pub unsafe fn assume_init(self) -> SampleMut<Service, [Payload], UserHeader> {
-        // the transmute is not nice but safe since MaybeUninit is #[repr(transparent)] to the inner type
-        let initialized_sample = core::mem::transmute_copy(&self.sample);
-        core::mem::forget(self);
-        initialized_sample
+        unsafe {
+            // the transmute is not nice but safe since MaybeUninit is #[repr(transparent)] to the inner type
+            let initialized_sample = core::mem::transmute_copy(&self.sample);
+            core::mem::forget(self);
+            initialized_sample
+        }
     }
 
     /// Writes the payload to the sample and labels the sample as initialized
@@ -453,10 +457,10 @@ impl<Service: crate::service::Service, Payload: Debug + ZeroCopySend, UserHeader
 }
 
 impl<
-        Service: crate::service::Service,
-        Payload: Debug + Copy + ZeroCopySend,
-        UserHeader: ZeroCopySend,
-    > SampleMutUninit<Service, [MaybeUninit<Payload>], UserHeader>
+    Service: crate::service::Service,
+    Payload: Debug + Copy + ZeroCopySend,
+    UserHeader: ZeroCopySend,
+> SampleMutUninit<Service, [MaybeUninit<Payload>], UserHeader>
 {
     /// Writes the payload by mem copying the provided slice into the [`SampleMutUninit`].
     ///

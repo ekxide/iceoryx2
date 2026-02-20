@@ -20,13 +20,13 @@ use std::time::UNIX_EPOCH;
 use iceoryx2_pal_concurrency_sync::atomic::AtomicU32;
 use iceoryx2_pal_concurrency_sync::semaphore::Semaphore;
 use iceoryx2_pal_concurrency_sync::{WaitAction, WaitResult};
+use windows_sys::Win32::System::Threading::INFINITE;
 use windows_sys::Win32::System::Threading::WaitOnAddress;
 use windows_sys::Win32::System::Threading::WakeByAddressSingle;
-use windows_sys::Win32::System::Threading::INFINITE;
 
+use crate::posix::Errno;
 use crate::posix::constants::*;
 use crate::posix::types::*;
-use crate::posix::Errno;
 
 pub unsafe fn sem_create(name: *const c_char, oflag: int, mode: mode_t, value: uint) -> *mut sem_t {
     SEM_FAILED
