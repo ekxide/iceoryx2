@@ -10,27 +10,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-extern crate iceoryx2_bb_loggers;
+use iceoryx2_bb_testing_nostd_macros::requires_std;
 
-use iceoryx2_bb_concurrency::atomic::{AtomicU64, Ordering};
-use iceoryx2_bb_posix::barrier::{BarrierBuilder, BarrierHandle};
-use iceoryx2_bb_posix::mutex::Handle;
-use iceoryx2_bb_posix::system_configuration::SystemInfo;
-use iceoryx2_bb_posix::thread::*;
-use iceoryx2_bb_testing::watchdog::Watchdog;
-use iceoryx2_bb_testing::{assert_that, test_requires};
-use iceoryx2_pal_posix::posix::{self, POSIX_SUPPORT_CPU_AFFINITY};
+#[cfg(feature = "std")]
+pub use std_testing::*;
 
-use core::time::Duration;
+#[cfg(feature = "std")]
+mod std_testing {
+    pub use core::time::Duration;
+    pub use std::sync::Barrier;
+    pub use std::time::Instant;
 
-extern crate alloc;
-use alloc::sync::Arc;
+    pub use alloc::sync::Arc;
 
-use std::sync::Barrier;
-use std::time::Instant;
+    pub use iceoryx2_bb_posix::system_configuration::SystemInfo;
+    pub use iceoryx2_bb_posix::thread::*;
+    pub use iceoryx2_bb_testing::watchdog::Watchdog;
+    pub use iceoryx2_bb_testing::{assert_that, test_requires};
+    pub use iceoryx2_pal_posix::posix::{self, POSIX_SUPPORT_CPU_AFFINITY};
+}
 
-#[test]
-fn thread_set_name_works() {
+#[requires_std("threading", "synchronization")]
+pub fn thread_set_name_works() {
+    use std::sync::Barrier;
+
     let barrier = Arc::new(Barrier::new(2));
     let name = ThreadName::try_from(b"oh-a-thread").unwrap();
     let thread = {
@@ -47,15 +50,17 @@ fn thread_set_name_works() {
     };
 
     barrier.wait();
-    let name = *thread.get_name().unwrap();
+    let name = thread.get_name().unwrap().clone();
     barrier.wait();
     drop(thread);
 
     assert_that!(name, eq b"oh-a-thread");
 }
 
-#[test]
-fn thread_creation_does_not_block() {
+#[requires_std("threading", "synchronization")]
+pub fn thread_creation_does_not_block() {
+    use std::sync::Barrier;
+
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
         let barrier = barrier.clone();
@@ -69,8 +74,8 @@ fn thread_creation_does_not_block() {
     drop(thread);
 }
 
-#[test]
-fn thread_affinity_is_set_to_all_existing_cores_when_nothing_was_configured() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_affinity_is_set_to_all_existing_cores_when_nothing_was_configured() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let number_of_cpu_cores = SystemInfo::NumberOfCpuCores.value();
@@ -102,8 +107,8 @@ fn thread_affinity_is_set_to_all_existing_cores_when_nothing_was_configured() {
     }
 }
 
-#[test]
-fn thread_set_affinity_to_one_cpu_core_on_creation_works() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_one_cpu_core_on_creation_works() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let barrier = Arc::new(Barrier::new(2));
@@ -129,8 +134,8 @@ fn thread_set_affinity_to_one_cpu_core_on_creation_works() {
     assert_that!(affinity[0], eq 0);
 }
 
-#[test]
-fn thread_set_affinity_to_two_cpu_cores_on_creation_works() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_two_cpu_cores_on_creation_works() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     test_requires!(SystemInfo::NumberOfCpuCores.value() > 1);
     let _watchdog = Watchdog::new();
@@ -160,8 +165,8 @@ fn thread_set_affinity_to_two_cpu_cores_on_creation_works() {
     assert_that!(affinity, contains 1);
 }
 
-#[test]
-fn thread_set_affinity_to_non_existing_cpu_cores_on_creation_fails() {
+#[requires_std("threading", "watchdog")]
+pub fn thread_set_affinity_to_non_existing_cpu_cores_on_creation_fails() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let number_of_cpu_cores = SystemInfo::NumberOfCpuCores.value();
@@ -173,8 +178,8 @@ fn thread_set_affinity_to_non_existing_cpu_cores_on_creation_fails() {
     assert_that!(thread.err(), eq Some(ThreadSpawnError::CpuCoreOutsideOfSupportedCpuRangeForAffinity));
 }
 
-#[test]
-fn thread_set_affinity_to_cores_greater_than_cpu_set_size_fails() {
+#[requires_std("threading", "watchdog")]
+pub fn thread_set_affinity_to_cores_greater_than_cpu_set_size_fails() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let thread = ThreadBuilder::new()
@@ -185,8 +190,8 @@ fn thread_set_affinity_to_cores_greater_than_cpu_set_size_fails() {
     assert_that!(thread.err(), eq Some(ThreadSpawnError::CpuCoreOutsideOfSupportedCpuRangeForAffinity));
 }
 
-#[test]
-fn thread_set_affinity_to_one_core_from_handle_works() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_one_core_from_handle_works() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let barrier = Arc::new(Barrier::new(2));
@@ -212,8 +217,8 @@ fn thread_set_affinity_to_one_core_from_handle_works() {
     assert_that!(affinity[0], eq 0);
 }
 
-#[test]
-fn thread_set_affinity_to_two_cores_from_handle_works() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_two_cores_from_handle_works() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     test_requires!(SystemInfo::NumberOfCpuCores.value() > 1);
     let _watchdog = Watchdog::new();
@@ -243,8 +248,8 @@ fn thread_set_affinity_to_two_cores_from_handle_works() {
     assert_that!(affinity, contains 1);
 }
 
-#[test]
-fn thread_set_affinity_to_non_existing_cores_from_handle_fails() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_non_existing_cores_from_handle_fails() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let number_of_cpu_cores = SystemInfo::NumberOfCpuCores.value();
@@ -286,8 +291,8 @@ fn thread_set_affinity_to_non_existing_cores_from_handle_fails() {
     assert_that!(affinity, eq original_affinity);
 }
 
-#[test]
-fn thread_set_affinity_to_one_core_from_thread_works() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_one_core_from_thread_works() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let barrier = Arc::new(Barrier::new(2));
@@ -322,8 +327,8 @@ fn thread_set_affinity_to_one_core_from_thread_works() {
     assert_that!(affinity[0], eq 0);
 }
 
-#[test]
-fn thread_set_affinity_to_two_cores_from_thread_works() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_two_cores_from_thread_works() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     test_requires!(SystemInfo::NumberOfCpuCores.value() > 1);
     let _watchdog = Watchdog::new();
@@ -352,8 +357,8 @@ fn thread_set_affinity_to_two_cores_from_thread_works() {
     assert_that!(affinity, contains 1);
 }
 
-#[test]
-fn thread_set_affinity_to_non_existing_cores_from_thread_fails() {
+#[requires_std("threading", "synchronization", "watchdog")]
+pub fn thread_set_affinity_to_non_existing_cores_from_thread_fails() {
     test_requires!(POSIX_SUPPORT_CPU_AFFINITY);
     let _watchdog = Watchdog::new();
     let number_of_cpu_cores = SystemInfo::NumberOfCpuCores.value();
@@ -385,8 +390,8 @@ fn thread_set_affinity_to_non_existing_cores_from_thread_fails() {
     assert_that!(affinity, eq original_affinity);
 }
 
-#[test]
-fn thread_destructor_does_not_block_on_empty_thread() {
+#[requires_std("threading", "synchronization", "watchdog", "time")]
+pub fn thread_destructor_does_not_block_on_empty_thread() {
     let _watchdog = Watchdog::new();
     let barrier = Arc::new(Barrier::new(2));
     let thread = {
@@ -405,8 +410,8 @@ fn thread_destructor_does_not_block_on_empty_thread() {
     assert_that!(start.elapsed(), lt(Duration::from_millis(10)));
 }
 
-#[test]
-fn thread_destructor_does_block_on_busy_thread() {
+#[requires_std("threading", "synchronization", "watchdog", "time")]
+pub fn thread_destructor_does_block_on_busy_thread() {
     let _watchdog = Watchdog::new();
     const SLEEP_DURATION: Duration = Duration::from_millis(100);
     let barrier = Arc::new(Barrier::new(2));
@@ -432,38 +437,4 @@ fn thread_destructor_does_block_on_busy_thread() {
     let start = Instant::now();
     drop(thread);
     assert_that!(start.elapsed(), time_at_least SLEEP_DURATION);
-}
-
-#[test]
-fn scoped_threads_work() {
-    let _watchdog = Watchdog::new();
-    let number_of_threads = MAX_SCOPED_THREADS;
-    let handle = BarrierHandle::new();
-    let barrier = BarrierBuilder::new((number_of_threads + 1) as _)
-        .create(&handle)
-        .unwrap();
-    let shared_counter = AtomicU64::new(0);
-
-    thread_scope(|s| {
-        for _ in 0..number_of_threads {
-            s.thread_builder()
-                .spawn(|| {
-                    barrier.wait();
-                    for _ in 0..1000 {
-                        shared_counter.fetch_add(1, Ordering::Relaxed);
-                    }
-                })
-                .unwrap();
-        }
-
-        barrier.wait();
-
-        Ok(())
-    })
-    .unwrap();
-
-    assert_that!(
-        shared_counter.load(Ordering::Relaxed),
-        eq(number_of_threads * 1000) as u64
-    );
 }
