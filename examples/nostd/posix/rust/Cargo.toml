@@ -22,6 +22,8 @@ iceoryx2-bb-elementary-traits = { path = "../../../../iceoryx2-bb/elementary-tra
 iceoryx2-bb-memory = { path = "../../../../iceoryx2-bb/memory" }
 iceoryx2-bb-posix = { path = "../../../../iceoryx2-bb/posix" }
 
+libc = { version = "0.2.183" }
+
 [profile.dev]
 panic = "abort"
 

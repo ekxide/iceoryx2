@@ -80,6 +80,9 @@ extern "C" fn main() -> i32 {
         }
 
         coutln!("Send sample {counter} ...");
+        unsafe {
+            libc::printf(c"Send sample %i\n".as_ptr(), counter);
+        }
     }
 
     coutln!("Exit");

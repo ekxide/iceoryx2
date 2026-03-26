@@ -62,6 +62,9 @@ extern "C" fn main() -> i32 {
             match subscriber.receive() {
                 Ok(Some(sample)) => {
                     coutln!("received: {:?}", *sample);
+                    unsafe {
+                        libc::printf(c"received: %i\n".as_ptr(), *sample);
+                    }
                 }
                 Ok(None) => {
                     // No more samples available
