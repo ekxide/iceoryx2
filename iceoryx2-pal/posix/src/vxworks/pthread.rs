@@ -110,12 +110,20 @@ pub unsafe fn pthread_self() -> pthread_t {
     libc::pthread_self()
 }
 
-pub unsafe fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int {
-    internal::pthread_setname_np(thread, name)
+pub unsafe fn pthread_setname_np(_thread: pthread_t, _name: *const c_char) -> int {
+    // internal::pthread_setname_np(thread, name)
+
+    // TODO: not available on SR0660, which is older than 25.09
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
-pub unsafe fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int {
-    internal::pthread_getname_np(thread, name, len)
+pub unsafe fn pthread_getname_np(_thread: pthread_t, _name: *mut c_char, _len: size_t) -> int {
+    // internal::pthread_getname_np(thread, name, len)
+
+    // TODO: not available on SR0660, which is older than 25.09
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_kill(thread: pthread_t, sig: int) -> int {
@@ -123,31 +131,39 @@ pub unsafe fn pthread_kill(thread: pthread_t, sig: int) -> int {
 }
 
 pub unsafe fn pthread_setaffinity_np(
-    thread: pthread_t,
-    cpusetsize: size_t,
-    cpuset: *const cpu_set_t,
+    _thread: pthread_t,
+    _cpusetsize: size_t,
+    _cpuset: *const cpu_set_t,
 ) -> int {
-    let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
+    // let cpuset = core::mem::transmute::<cpu_set_t, native_cpu_set_t>(*cpuset);
+    //
+    // internal::pthread_setaffinity_np(thread, cpusetsize, &cpuset as *const _ as *const _)
 
-    internal::pthread_setaffinity_np(thread, cpusetsize, &cpuset as *const _ as *const _)
+    // TODO: not available on SR0660, which is older than 25.09
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_getaffinity_np(
-    thread: pthread_t,
-    cpusetsize: size_t,
-    cpuset: *mut cpu_set_t,
+    _thread: pthread_t,
+    _cpusetsize: size_t,
+    _cpuset: *mut cpu_set_t,
 ) -> int {
-    let mut native_cpuset = native_cpu_set_t::new_zeroed();
+    // let mut native_cpuset = native_cpu_set_t::new_zeroed();
+    //
+    // let ret_val = internal::pthread_getaffinity_np(
+    //     thread,
+    //     cpusetsize,
+    //     &mut native_cpuset as *mut _ as *mut _,
+    // );
+    //
+    // *cpuset = core::mem::transmute::<native_cpu_set_t, cpu_set_t>(native_cpuset);
+    //
+    // ret_val
 
-    let ret_val = internal::pthread_getaffinity_np(
-        thread,
-        cpusetsize,
-        &mut native_cpuset as *mut _ as *mut _,
-    );
-
-    *cpuset = core::mem::transmute::<native_cpu_set_t, cpu_set_t>(native_cpuset);
-
-    ret_val
+    // TODO: not available on SR0660, which is older than 25.09
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_rwlockattr_init(attr: *mut pthread_rwlockattr_t) -> int {
@@ -223,8 +239,12 @@ pub unsafe fn pthread_mutex_unlock(mtx: *mut pthread_mutex_t) -> int {
     libc::pthread_mutex_unlock(mtx)
 }
 
-pub unsafe fn pthread_mutex_consistent(mtx: *mut pthread_mutex_t) -> int {
-    internal::pthread_mutex_consistent(mtx)
+pub unsafe fn pthread_mutex_consistent(_mtx: *mut pthread_mutex_t) -> int {
+    // internal::pthread_mutex_consistent(mtx)
+    // TODO: not available on SR0660, which is older than 25.09
+
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_mutexattr_init(attr: *mut pthread_mutexattr_t) -> int {
@@ -243,8 +263,15 @@ pub unsafe fn pthread_mutexattr_setpshared(attr: *mut pthread_mutexattr_t, pshar
     internal::pthread_mutexattr_setpshared(attr, pshared)
 }
 
-pub unsafe fn pthread_mutexattr_setrobust(attr: *mut pthread_mutexattr_t, robustness: int) -> int {
-    internal::pthread_mutexattr_setrobust(attr, robustness)
+pub unsafe fn pthread_mutexattr_setrobust(
+    _attr: *mut pthread_mutexattr_t,
+    _robustness: int,
+) -> int {
+    // internal::pthread_mutexattr_setrobust(attr, robustness)
+
+    // TODO: not available on SR0660, which is older than 25.09
+    Errno::set(Errno::ENOSYS);
+    -1
 }
 
 pub unsafe fn pthread_mutexattr_settype(attr: *mut pthread_mutexattr_t, mtype: int) -> int {
@@ -284,30 +311,30 @@ mod internal {
             param: *const sched_param,
         ) -> int;
 
-        pub(super) fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int;
+        // pub(super) fn pthread_setname_np(thread: pthread_t, name: *const c_char) -> int;
 
-        pub(super) fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int;
+        // pub(super) fn pthread_getname_np(thread: pthread_t, name: *mut c_char, len: size_t) -> int;
 
         pub(super) fn pthread_kill(thread: pthread_t, sig: int) -> int;
 
-        pub(super) fn pthread_setaffinity_np(
-            thread: pthread_t,
-            cpusetsize: size_t,
-            cpuset: *const cpu_set_t,
-        ) -> int;
-
-        pub(super) fn pthread_getaffinity_np(
-            thread: pthread_t,
-            cpusetsize: size_t,
-            cpuset: *mut cpu_set_t,
-        ) -> int;
+        // pub(super) fn pthread_setaffinity_np(
+        //     thread: pthread_t,
+        //     cpusetsize: size_t,
+        //     cpuset: *const cpu_set_t,
+        // ) -> int;
+        //
+        // pub(super) fn pthread_getaffinity_np(
+        //     thread: pthread_t,
+        //     cpusetsize: size_t,
+        //     cpuset: *mut cpu_set_t,
+        // ) -> int;
 
         pub(super) fn pthread_rwlockattr_setpshared(
             attr: *mut pthread_rwlockattr_t,
             pshared: int,
         ) -> int;
 
-        pub(super) fn pthread_mutex_consistent(mtx: *mut pthread_mutex_t) -> int;
+        // pub(super) fn pthread_mutex_consistent(mtx: *mut pthread_mutex_t) -> int;
 
         pub(super) fn pthread_mutexattr_setprotocol(
             attr: *mut pthread_mutexattr_t,
@@ -319,9 +346,9 @@ mod internal {
             pshared: int,
         ) -> int;
 
-        pub(super) fn pthread_mutexattr_setrobust(
-            attr: *mut pthread_mutexattr_t,
-            robustness: int,
-        ) -> int;
+        // pub(super) fn pthread_mutexattr_setrobust(
+        //     attr: *mut pthread_mutexattr_t,
+        //     robustness: int,
+        // ) -> int;
     }
 }
