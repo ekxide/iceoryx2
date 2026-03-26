@@ -47,7 +47,10 @@ fn duration_since_epoch() -> core::time::Duration {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
     }
-    #[cfg(all(not(feature = "std"), any(target_os = "linux", target_os = "nto",)))]
+    #[cfg(all(
+        not(feature = "std"),
+        any(target_os = "linux", target_os = "nto", target_os = "vxworks",)
+    ))]
     {
         use core::time::Duration;
         use iceoryx2_pal_posix::*;
@@ -67,9 +70,10 @@ fn duration_since_epoch() -> core::time::Duration {
     }
     #[cfg(all(
         not(feature = "std"),
-        not(any(target_os = "linux", target_os = "nto",))
+        not(any(target_os = "linux", target_os = "nto", target_os = "vxworks"))
     ))]
     {
+        use core::time::Duration;
         Duration::from_secs(0)
     }
 }

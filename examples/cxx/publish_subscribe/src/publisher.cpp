@@ -20,7 +20,8 @@ constexpr iox2::bb::Duration CYCLE_TIME = iox2::bb::Duration::from_secs(1);
 
 auto main() -> int {
     using namespace iox2;
-    set_log_level_from_env_or(LogLevel::Info);
+    // TODO: either needs to be made available in Rust via no_std or this function should also not be available in C++
+    // set_log_level_from_env_or(LogLevel::Info);
     auto node = NodeBuilder().create<ServiceType::Ipc>().value();
 
     auto service = node.service_builder(ServiceName::create("My/Funk/ServiceName").value())

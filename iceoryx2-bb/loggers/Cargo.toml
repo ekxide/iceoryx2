@@ -46,3 +46,6 @@ iceoryx2-pal-posix = { workspace = true }
 
 [target.'cfg(target_os = "nto")'.dependencies]
 iceoryx2-pal-posix = { workspace = true }
+
+[target.'cfg(target_os = "vxworks")'.dependencies]
+iceoryx2-pal-posix = { workspace = true }

@@ -20,3 +20,5 @@ posix-nostd-common = { workspace = true }
 iceoryx2-bb-loggers = { workspace = true, features = ["console"] }
 iceoryx2-bb-posix = { workspace  = true, features = [] }
 iceoryx2 = { workspace = true, features = [] }
+
+libc = { workspace = true }

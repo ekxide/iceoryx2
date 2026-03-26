@@ -154,22 +154,39 @@ the stack size is still too small and needs to be increased.
 cargo build --release --package iceoryx2-ffi-c
 
 cmake -S . \
-  -B target/ff/cc/build \
+  -B target/x86_64-wrs-vxworks/ff/cc/build \
   -DRUST_BUILD_ARTIFACT_PATH="$(pwd)/target/x86_64-wrs-vxworks/release" \
   -DCMAKE_SYSTEM_NAME=VxWorks
-cmake --build target/ff/cc/build
-cmake --install target/ff/cc/build --prefix target/ff/cc/install
+cmake --build target/x86_64-wrs-vxworks/ff/cc/build
+cmake --install target/x86_64-wrs-vxworks/ff/cc/build --prefix target/x86_64-wrs-vxworks/ff/cc/install
 ```
 
-### Build selected examples
+### Build and run selected examples
 
 ```bash
 cmake -S examples/cxx/publish_subscribe \
-  -B target/ff/cc/out-of-tree \
-  -DCMAKE_PREFIX_PATH="$(pwd)/target/ff/cc/install" \
+  -B target/x86_64-wrs-vxworks/ff/cc/out-of-tree \
+  -DCMAKE_PREFIX_PATH="$(pwd)/target/x86_64-wrs-vxworks/ff/cc/install" \
   -DCMAKE_CXX_STANDARD=17 \
   -DCMAKE_SYSTEM_NAME=VxWorks
-cmake --build target/ff/cc/out-of-tree
+cmake --build target/x86_64-wrs-vxworks/ff/cc/out-of-tree
+```
+
+The examples can now be run in a `qemu` environment with:
+
+```bash
+rtp exec -u 262144 ff/cc/out-of-tree/example_cxx_publish_subscribe_subscriber&
+rtp exec -u 262144 ff/cc/out-of-tree/example_cxx_publish_subscribe_publisher
+```
+
+### Build for Rust no_std
+
+In order to build the iceoryx2 C and C++ bindings without Rust std lib,
+the `--no-default-features` parameter needs to be added to `cargo build`.
+The example above then becomes
+
+```bash
+cargo build --release --package iceoryx2-ffi-c --no-default-features
 ```
 
 <!-- markdownlint-disable MD025 Multiple top-level headings -->
