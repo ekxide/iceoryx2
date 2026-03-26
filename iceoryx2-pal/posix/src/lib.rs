@@ -18,7 +18,12 @@
 // consistent, such commands seem to only build with default features,
 // and crates do not have `std` enabled by default to simplify `no_std` builds.
 #![cfg_attr(
-    any(target_os = "linux", target_os = "nto", target_os = "none"),
+    any(
+        target_os = "linux",
+        target_os = "nto",
+        target_os = "vxworks",
+        target_os = "none",
+    ),
     no_std
 )]
 #![allow(clippy::missing_safety_doc)]

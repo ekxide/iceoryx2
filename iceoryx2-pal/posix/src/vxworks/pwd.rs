@@ -15,7 +15,8 @@
 use crate::posix::types::*;
 
 use core::ffi::CStr;
-use std::sync::Mutex;
+use iceoryx2_pal_concurrency_sync::WaitAction;
+use iceoryx2_pal_concurrency_sync::strategy::mutex::Mutex;
 
 use super::Errno;
 
@@ -49,7 +50,6 @@ struct GetGrWorkaround {}
 
 impl GetGrWorkaround {
     unsafe fn getgrnam_r(
-        &self,
         name: *const c_char,
         grp: *mut group,
         buf: *mut c_char,
@@ -79,7 +79,6 @@ impl GetGrWorkaround {
     }
 
     pub unsafe fn getgrgid_r(
-        &self,
         gid: gid_t,
         grp: *mut group,
         buf: *mut c_char,
@@ -199,7 +198,7 @@ impl GetGrWorkaround {
     }
 }
 
-static GETGR_MUTEX: Mutex<GetGrWorkaround> = Mutex::new(GetGrWorkaround {});
+static GETGR_MUTEX: Mutex = Mutex::new();
 
 pub unsafe fn getgrnam_r(
     name: *const c_char,
@@ -208,12 +207,11 @@ pub unsafe fn getgrnam_r(
     buflen: size_t,
     result: *mut *mut group,
 ) -> int {
-    unsafe {
-        GETGR_MUTEX
-            .lock()
-            .unwrap()
-            .getgrnam_r(name, grp, buf, buflen, result)
-    }
+    GETGR_MUTEX.lock(|_, _| WaitAction::Continue);
+    let ret_val = unsafe { GetGrWorkaround::getgrnam_r(name, grp, buf, buflen, result) };
+    GETGR_MUTEX.unlock(|_| {});
+
+    ret_val
 }
 
 pub unsafe fn getgrgid_r(
@@ -223,12 +221,11 @@ pub unsafe fn getgrgid_r(
     buflen: size_t,
     result: *mut *mut group,
 ) -> int {
-    unsafe {
-        GETGR_MUTEX
-            .lock()
-            .unwrap()
-            .getgrgid_r(gid, grp, buf, buflen, result)
-    }
+    GETGR_MUTEX.lock(|_, _| WaitAction::Continue);
+    let ret_val = unsafe { GetGrWorkaround::getgrgid_r(gid, grp, buf, buflen, result) };
+    GETGR_MUTEX.unlock(|_| {});
+
+    ret_val
 }
 
 mod internal {
