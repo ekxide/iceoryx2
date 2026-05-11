@@ -59,8 +59,9 @@ auto main() -> int {
     set_log_level_from_env_or(LogLevel::Info);
 
     auto config = Config::global_config().to_owned();
-    config.global().node().set_cleanup_dead_nodes_on_creation(true);
+    config.global().node().set_cleanup_dead_nodes_on_creation(false);
     config.global().node().set_cleanup_dead_nodes_on_destruction(false);
+    config.global().service().set_cleanup_dead_nodes_on_open(true);
 
     auto node = NodeBuilder().config(config).create<ServiceType::Ipc>().value();
 
