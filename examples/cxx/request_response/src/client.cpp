@@ -67,8 +67,8 @@ auto main() -> int {
 
     auto service_result = node.service_builder(ServiceName::create("My/Funk/ServiceName").value())
                               .request_response<uint64_t, TransmissionData>()
-                              .max_servers(2)
-                              .max_clients(1)
+                              .max_servers(3)
+                              .max_clients(2)
                               .open_or_create();
     while (!service_result.has_value()
            && (service_result.error() == RequestResponseOpenOrCreateError::OpenHangsInCreation
@@ -76,8 +76,8 @@ auto main() -> int {
                || service_result.error() == RequestResponseOpenOrCreateError::SystemInFlux)) {
         service_result = node.service_builder(ServiceName::create("My/Funk/ServiceName").value())
                              .request_response<uint64_t, TransmissionData>()
-                             .max_servers(2)
-                             .max_clients(1)
+                             .max_servers(3)
+                             .max_clients(2)
                              .open_or_create();
         break;
     }
