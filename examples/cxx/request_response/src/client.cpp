@@ -78,6 +78,7 @@ auto main() -> int {
                              .max_servers(2)
                              .max_clients(1)
                              .open_or_create();
+        break;
     }
 
     if (!service_result.has_value()) {
@@ -90,6 +91,7 @@ auto main() -> int {
     auto client_result = service.client_builder().create();
     while (!client_result.has_value() && client_result.error() == ClientCreateError::ExceedsMaxSupportedClients) {
         client_result = service.client_builder().create();
+        break;
     }
 
     if (!client_result.has_value()) {
