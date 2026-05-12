@@ -507,6 +507,10 @@ impl<'builder, T: Send + Sync + Debug + 'static> DynamicStorageBuilder<'builder,
         self.open_impl(&mut guard)
     }
 
+    fn force_remove(self) -> Result<(), DynamicStorageOpenError> {
+        todo!();
+    }
+
     fn create(mut self, initial_value: T) -> Result<Storage<T>, DynamicStorageCreateError> {
         let msg = "Failed to create dynamic storage";
         let mut guard = fail!(from self, when PROCESS_LOCAL_STORAGE.lock(),

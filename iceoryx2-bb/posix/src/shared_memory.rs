@@ -189,6 +189,15 @@ impl SharedMemoryBuilder {
         Self::open(self)
     }
 
+    pub fn force_remove(self) -> Result<(), SharedMemoryCreationError> {
+        SharedMemory::remove(&self.name).inspect_err(|e| {
+            error!("#### SharedMemory remove: {:?}", e);
+        })?;
+
+        trace!("removed");
+        Ok(())
+    }
+
     fn create_memory_mapping(
         file_descriptor: FileDescriptor,
         config: &SharedMemoryBuilder,

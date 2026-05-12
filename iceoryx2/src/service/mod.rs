@@ -641,7 +641,11 @@ pub mod internal {
         origin: &str,
         port_name: &str,
     ) -> Result<(), CleanupFailure> {
-        remove_sender_connection_and_data_segment::<S>(id, config, origin, port_name)?;
+        remove_sender_connection_and_data_segment::<S>(id, config, origin, port_name).inspect_err(
+            |e| {
+                error!("#### remove_sender_connection_and_data_segment: {:?}", e);
+            },
+        )?;
         unsafe { remove_receiver_port_from_all_connections::<S>(id, config) }.map_err(|e| {
             debug!(from origin,
                     "Failed to remove the {} ({:?}) from all of its incoming connections ({:?}).",
@@ -741,6 +745,7 @@ pub mod internal {
                         )
                         .is_err()
                         {
+                            // error!("#### cleanup_port_resources Publisher");
                             return PortCleanupAction::SkipPort;
                         }
                     }
@@ -749,6 +754,7 @@ pub mod internal {
                             remove_receiver_port_from_all_connections::<S>(id.value(), config)
                         } {
                             debug!(from origin, "Failed to remove the subscriber ({:?}) from all of its connections ({:?}).", id, e);
+                            // error!("#### cleanup_port_resources Subscriber");
                             return PortCleanupAction::SkipPort;
                         }
                     }
@@ -758,6 +764,7 @@ pub mod internal {
                     UniquePortId::Listener(ref id) => {
                         if let Err(e) = unsafe { remove_connection_of_listener::<S>(id, config) } {
                             debug!(from origin, "Failed to remove the listeners ({:?}) connection ({:?}).", id, e);
+                            // error!("#### cleanup_port_resources Listener");
                             return PortCleanupAction::SkipPort;
                         }
                     }
@@ -768,6 +775,9 @@ pub mod internal {
                             &origin,
                             "client",
                         )
+                        // .inspect_err(|e| {
+                        //     error!("#### cleanup_port_resources Client: {:?}", e);
+                        // })
                         .is_err()
                         {
                             return PortCleanupAction::SkipPort;
@@ -780,6 +790,9 @@ pub mod internal {
                             &origin,
                             "server",
                         )
+                        // .inspect_err(|e| {
+                        //     error!("#### cleanup_port_resources Server: {:?}", e);
+                        // })
                         .is_err()
                         {
                             return PortCleanupAction::SkipPort;

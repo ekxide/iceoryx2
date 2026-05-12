@@ -160,6 +160,9 @@ pub trait DynamicStorageBuilder<'builder, T: Send + Sync, D: DynamicStorage<T>>:
     /// removed without corrupting already opened [`DynamicStorage`]s.
     fn create(self, initial_value: T) -> Result<D, DynamicStorageCreateError>;
 
+    /// Dummy
+    fn force_remove(self) -> Result<(), DynamicStorageOpenError>;
+
     /// Opens a [`DynamicStorage`]. The implementation must ensure that a [`DynamicStorage`]
     /// which is in the midst of creation cannot be opened. If the [`DynamicStorage`] does not
     /// exist or is not initialized it fails.

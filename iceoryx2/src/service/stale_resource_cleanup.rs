@@ -18,7 +18,7 @@ use iceoryx2_cal::event::NamedConceptMgmt;
 use iceoryx2_cal::named_concept::NamedConceptListError;
 use iceoryx2_cal::named_concept::NamedConceptRemoveError;
 use iceoryx2_cal::zero_copy_connection::{ZeroCopyConnection, ZeroCopyPortRemoveError};
-use iceoryx2_log::fail;
+use iceoryx2_log::{error, fail};
 
 use crate::config;
 use crate::service;
@@ -47,16 +47,25 @@ pub(crate) unsafe fn remove_data_segment_of_port<Service: service::Service>(
         port_id
     );
     unsafe {
-        fail!(from origin, when <Service::SharedMemory as NamedConceptMgmt>::remove_cfg(
-                &data_segment_name(port_id),
-                &data_segment_config::<Service>(config),
-            ), "Unable to remove the ports ({port_id}) data segment."
+        let remove_cfg_result = <Service::SharedMemory as NamedConceptMgmt>::remove_cfg(
+            &data_segment_name(port_id),
+            &data_segment_config::<Service>(config),
+        )
+        .inspect_err(|e| {
+            error!("#### remove_data_segment_of_port [static]: {:?}", e);
+        });
+        fail!(from origin, when remove_cfg_result,
+             "Unable to remove the ports ({port_id}) data segment."
         );
 
-        fail!(from origin, when <Service::ResizableSharedMemory as NamedConceptMgmt>::remove_cfg(
-                &data_segment_name(port_id),
-                &resizable_data_segment_config::<Service>(config),
-            ), "Unable to remove the ports ({port_id}) resizable data segment."
+        let remove_cfg_result = <Service::ResizableSharedMemory as NamedConceptMgmt>::remove_cfg(
+            &data_segment_name(port_id),
+            &resizable_data_segment_config::<Service>(config),
+        )
+        .inspect_err(|e| {
+            error!("#### remove_data_segment_of_port [dynamic]: {:?}", e);
+        });
+        fail!(from origin, when remove_cfg_result, "Unable to remove the ports ({port_id}) resizable data segment."
         );
     }
     Ok(())
@@ -127,14 +136,25 @@ pub(crate) unsafe fn remove_sender_port_from_all_connections<Service: service::S
     let msg = "Unable to remove the sender port from all connections";
 
     let connection_config = connection_config::<Service>(config);
-    let connection_list = connections::<Service>(&origin, msg, &connection_config)?;
+    let connection_list =
+        connections::<Service>(&origin, msg, &connection_config).inspect_err(|e| {
+            error!(
+                "#### remove_sender_port_from_all_connections [connections]: {:?}",
+                e
+            );
+        })?;
 
     let mut ret_val = Ok(());
     for connection in connection_list {
         if let Some(sender_port_id) = extract_sender_port_id_from_connection(&connection) {
             if sender_port_id == port_id {
                 let result = handle_port_remove_error(
-                    unsafe { Service::Connection::remove_sender(&connection, &connection_config) },
+                    unsafe {
+                        Service::Connection::remove_sender(&connection, &connection_config)
+                            .inspect_err(|_e| {
+                                // error!("#### remove_sender_port_from_all_connections [remove_sender]: {:?}", e);
+                            })
+                    },
                     &origin,
                     msg,
                     &connection,
@@ -162,7 +182,13 @@ pub(crate) unsafe fn remove_receiver_port_from_all_connections<Service: service:
     let msg = "Unable to remove the receiver port from all connections";
 
     let connection_config = connection_config::<Service>(config);
-    let connection_list = connections::<Service>(&origin, msg, &connection_config)?;
+    let connection_list =
+        connections::<Service>(&origin, msg, &connection_config).inspect_err(|e| {
+            error!(
+                "#### remove_receiver_port_from_all_connections [connections]: {:?}",
+                e
+            );
+        })?;
 
     let mut ret_val = Ok(());
     for connection in connection_list {
@@ -171,6 +197,12 @@ pub(crate) unsafe fn remove_receiver_port_from_all_connections<Service: service:
                 let result = handle_port_remove_error(
                     unsafe {
                         Service::Connection::remove_receiver(&connection, &connection_config)
+                            .inspect_err(|_e| {
+                                // error!(
+                                //     "#### remove_receiver_port_from_all_connections [remove_receiver]: {:?}",
+                                //     e
+                                // );
+                            })
                     },
                     &origin,
                     msg,

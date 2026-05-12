@@ -46,6 +46,7 @@ use iceoryx2_bb_posix::memory_mapping::MemoryMappingBuilder;
 use iceoryx2_bb_posix::shared_memory::*;
 use iceoryx2_bb_system_types::path::Path;
 use iceoryx2_bb_testing::abandonable::NonNullFromRef;
+use iceoryx2_log::error;
 use iceoryx2_log::fail;
 use iceoryx2_log::warn;
 
@@ -197,12 +198,14 @@ impl<T: Send + Sync + Debug> Builder<'_, T> {
                 }
                 Err(FileOpenError::InsufficientPermissions) => {
                     if elapsed_time >= self.timeout {
+                        error!("#### File open_impl: InsufficientPermissions");
                         fail!(from self, with DynamicStorageOpenError::InitializationNotYetFinalized,
                         "{} since it is not readable - (it is not initialized after {:?}).",
                         msg, self.timeout);
                     }
                 }
-                Err(_) => {
+                Err(e) => {
+                    error!("#### File open_impl: {:?}", e);
                     fail!(from self, with DynamicStorageOpenError::InternalError, "{} since the underlying file could not be opened.", msg);
                 }
             };
@@ -425,6 +428,10 @@ impl<'builder, T: Send + Sync + Debug> DynamicStorageBuilder<'builder, T, Storag
         self.init_impl(shm, initial_value)
     }
 
+    fn force_remove(self) -> Result<(), DynamicStorageOpenError> {
+        todo!();
+    }
+
     fn open(self, access_mode: AccessMode) -> Result<Storage<T>, DynamicStorageOpenError> {
         self.open_impl(access_mode)
     }
@@ -563,24 +570,27 @@ impl<T: Send + Sync + Debug> NamedConceptMgmt for Storage<T> {
                 s.acquire_ownership();
                 Ok(true)
             }
-            Err(DynamicStorageOpenError::DoesNotExist) => Ok(false),
-            Err(e) => {
-                warn!(from origin,
+            Err(_) => match Builder::<T>::new(name).config(cfg).force_remove() {
+                Ok(_) => Ok(true),
+                Err(DynamicStorageOpenError::DoesNotExist) => Ok(false),
+                Err(e) => {
+                    warn!(from origin,
                     "Removing DynamicStorage in broken state ({:?}) will not call drop of the underlying data type {:?}.",
                     e, core::any::type_name::<T>());
 
-                match File::remove(&full_path) {
-                    Ok(v) => Ok(v),
-                    Err(FileRemoveError::InsufficientPermissions) => {
-                        fail!(from origin, with NamedConceptRemoveError::InsufficientPermissions,
+                    match File::remove(&full_path) {
+                        Ok(v) => Ok(v),
+                        Err(FileRemoveError::InsufficientPermissions) => {
+                            fail!(from origin, with NamedConceptRemoveError::InsufficientPermissions,
                                      "{} \"{}\" due to insufficient permissions.", msg, name);
-                    }
-                    Err(v) => {
-                        fail!(from origin, with NamedConceptRemoveError::InternalError,
+                        }
+                        Err(v) => {
+                            fail!(from origin, with NamedConceptRemoveError::InternalError,
                                     "{} \"{}\" due to an internal failure ({:?}).", msg, name, v);
+                        }
                     }
                 }
-            }
+            },
         }
     }
 

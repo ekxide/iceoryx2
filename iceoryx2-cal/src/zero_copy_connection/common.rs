@@ -31,9 +31,9 @@ pub mod details {
     use iceoryx2_bb_memory::bump_allocator::BumpAllocator;
     use iceoryx2_bb_posix::adaptive_wait::AdaptiveWaitBuilder;
     use iceoryx2_bb_posix::clock::Time;
-    use iceoryx2_bb_posix::file::AccessMode;
+    use iceoryx2_bb_posix::file::{AccessMode, FileBuilder};
     use iceoryx2_bb_testing::abandonable::NonNullFromRef;
-    use iceoryx2_log::{fail, fatal_panic};
+    use iceoryx2_log::{error, fail, fatal_panic};
 
     pub use crate::zero_copy_connection::*;
 
@@ -1107,6 +1107,43 @@ pub mod details {
                            }
                        }
         }
+
+        fn force_remove_storage(
+            name: &FileName,
+            config: &<Connection<Storage> as NamedConceptMgmt>::Configuration,
+            msg: &str,
+        ) -> Result<(), ZeroCopyPortRemoveError> {
+            let origin = "Connection::force_remove_storage()";
+
+            match <<Storage as DynamicStorage<SharedManagementData>>::Builder<'_> as NamedConceptBuilder<
+            Storage>>::new(name)
+            .config(&config.dynamic_storage_config).force_remove() {
+                Ok(_) =>  {
+                },
+                Err(DynamicStorageOpenError::VersionMismatch) => {
+                    error!("#### force_remove_storage: VersionMismatch");
+                    fail!(from origin, with ZeroCopyPortRemoveError::VersionMismatch,
+                          "{msg} since the underlying dynamic storage has a different iceoryx2 version.");
+                }
+                Err(DynamicStorageOpenError::InitializationNotYetFinalized) => {
+                    error!("#### force_remove_storage: InitializationNotYetFinalized");
+                    fail!(from origin, with ZeroCopyPortRemoveError::InsufficientPermissions,
+                          "{msg} due to insufficient permissions.");
+                }
+                Err(DynamicStorageOpenError::DoesNotExist) => {
+                    // error!("#### force_remove_storage: DoesNotExist");
+                    fail!(from origin, with ZeroCopyPortRemoveError::DoesNotExist,
+                          "{msg} since the underlying dynamic storage does not exist.");
+                }
+                Err(DynamicStorageOpenError::InternalError) => {
+                    error!("#### force_remove_storage: InternalError");
+                    fail!(from origin, with ZeroCopyPortRemoveError::InternalError,
+                          "{msg} due to an internal error.");
+                }
+            };
+
+            Ok(())
+        }
     }
 
     impl<Storage: DynamicStorage<SharedManagementData>> ZeroCopyConnection for Connection<Storage> {
@@ -1118,11 +1155,25 @@ pub mod details {
             name: &FileName,
             config: &Self::Configuration,
         ) -> Result<(), ZeroCopyPortRemoveError> {
-            let storage = Self::open_storage(
+            let storage = match Self::open_storage(
                 name,
                 config,
                 "Unable to remove forcefully the sender of the Zero Copy Connection",
-            )?;
+            ) {
+                Ok(storage) => storage,
+                // Err(ZeroCopyPortRemoveError::DoesNotExist) => {
+                //     return Err(ZeroCopyPortRemoveError::DoesNotExist);
+                // }
+                Err(_) => {
+                    // error!("#### remove_sender: {:?}", e);
+                    Self::force_remove_storage(
+                        name,
+                        config,
+                        "Unable to remove forcefully the sender of the Zero Copy Connection",
+                    )?;
+                    return Ok(());
+                }
+            };
             cleanup_shared_memory(&storage, State::Sender);
             Ok(())
         }
@@ -1131,11 +1182,25 @@ pub mod details {
             name: &FileName,
             config: &Self::Configuration,
         ) -> Result<(), ZeroCopyPortRemoveError> {
-            let storage = Self::open_storage(
+            let storage = match Self::open_storage(
                 name,
                 config,
                 "Unable to remove forcefully the receiver of the Zero Copy Connection",
-            )?;
+            ) {
+                Ok(storage) => storage,
+                // Err(ZeroCopyPortRemoveError::DoesNotExist) => {
+                //     return Err(ZeroCopyPortRemoveError::DoesNotExist);
+                // }
+                Err(_) => {
+                    // error!("#### remove_receiver: {:?}", e);
+                    Self::force_remove_storage(
+                        name,
+                        config,
+                        "Unable to remove forcefully the receiver of the Zero Copy Connection",
+                    )?;
+                    return Ok(());
+                }
+            };
             cleanup_shared_memory(&storage, State::Receiver);
             Ok(())
         }
