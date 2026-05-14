@@ -74,12 +74,15 @@ auto main() -> int {
            && (service_result.error() == RequestResponseOpenOrCreateError::OpenHangsInCreation
                || service_result.error() == RequestResponseOpenOrCreateError::CreateHangsInCreation
                || service_result.error() == RequestResponseOpenOrCreateError::SystemInFlux)) {
+        auto error_index = static_cast<uint64_t>(service_result.error());
+        std::cout << "#### retry after service open or create error: [" << error_index << "] "
+                  << RequestResponseOpenOrCreateErrorString[error_index] << std::endl;
         service_result = node.service_builder(ServiceName::create("My/Funk/ServiceName").value())
                              .request_response<uint64_t, TransmissionData>()
                              .max_servers(2)
                              .max_clients(1)
                              .open_or_create();
-        break;
+        // break;
     }
 
     if (!service_result.has_value()) {
@@ -91,8 +94,11 @@ auto main() -> int {
 
     auto client_result = service.client_builder().create();
     while (!client_result.has_value() && client_result.error() == ClientCreateError::ExceedsMaxSupportedClients) {
+        auto error_index = static_cast<uint64_t>(client_result.error());
+        std::cout << "#### retry after client create error: [" << error_index << "] "
+                  << ClientCreateErrorStrings[error_index] << std::endl;
         client_result = service.client_builder().create();
-        break;
+        // break;
     }
 
     if (!client_result.has_value()) {
