@@ -56,6 +56,8 @@ const char* ServerCreateErrorStrings[] = {
     "FailedToDeployThreadsafetyPolicy",
 };
 
+constexpr auto MAX_RETRIES { 0 };
+
 auto main() -> int {
     using namespace iox2;
     set_log_level_from_env_or(LogLevel::Info);
@@ -94,19 +96,25 @@ auto main() -> int {
                               .max_servers(2)
                               .max_clients(1)
                               .open_or_create();
+    auto retry_count = 0;
     while (!service_result.has_value()
            && (service_result.error() == RequestResponseOpenOrCreateError::OpenHangsInCreation
                || service_result.error() == RequestResponseOpenOrCreateError::CreateHangsInCreation
                || service_result.error() == RequestResponseOpenOrCreateError::SystemInFlux)) {
+        if (service_result.error() == RequestResponseOpenOrCreateError::SystemInFlux && retry_count >= MAX_RETRIES) {
+            break;
+        }
+        ++retry_count;
+
         auto error_index = static_cast<uint64_t>(service_result.error());
         std::cout << "#### retry after service open or create error: [" << error_index << "] "
                   << RequestResponseOpenOrCreateErrorString[error_index] << std::endl;
+
         service_result = node.service_builder(ServiceName::create("My/Funk/ServiceName").value())
                              .request_response<uint64_t, TransmissionData>()
                              .max_servers(2)
                              .max_clients(1)
                              .open_or_create();
-        // break;
     }
 
     if (!service_result.has_value()) {
@@ -117,12 +125,30 @@ auto main() -> int {
     auto service = std::move(service_result).value();
 
     auto server_result = service.server_builder().create();
+    retry_count = 0;
     while (!server_result.has_value() && server_result.error() == ServerCreateError::ExceedsMaxSupportedServers) {
+        if (retry_count >= MAX_RETRIES) {
+            break;
+        }
+        ++retry_count;
+
+        {
+            std::cout << "#### cleanup via service open" << std::endl;
+            auto config = Config::global_config().to_owned();
+            config.global().node().set_cleanup_dead_nodes_on_creation(false);
+            config.global().service().set_cleanup_dead_nodes_on_open(true);
+            auto node = NodeBuilder().config(config).create<ServiceType::Ipc>().value();
+            node.service_builder(ServiceName::create("My/Funk/ServiceName").value())
+                .request_response<uint64_t, TransmissionData>()
+                .max_servers(2)
+                .max_clients(1)
+                .open_or_create();
+        }
+
         auto error_index = static_cast<uint64_t>(server_result.error());
         std::cout << "#### retry after server create error: [" << error_index << "] "
                   << ServerCreateErrorStrings[error_index] << std::endl;
         server_result = service.server_builder().create();
-        // break;
     }
 
     if (!server_result.has_value()) {
