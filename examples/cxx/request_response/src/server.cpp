@@ -97,8 +97,7 @@ auto main() -> int {
     while (!service_result.has_value()
            && (service_result.error() == RequestResponseOpenOrCreateError::OpenHangsInCreation
                || service_result.error() == RequestResponseOpenOrCreateError::CreateHangsInCreation
-               // || service_result.error() == RequestResponseOpenOrCreateError::SystemInFlux
-               )) {
+               || service_result.error() == RequestResponseOpenOrCreateError::SystemInFlux)) {
         auto error_index = static_cast<uint64_t>(service_result.error());
         std::cout << "#### retry after service open or create error: [" << error_index << "] "
                   << RequestResponseOpenOrCreateErrorString[error_index] << std::endl;
@@ -118,13 +117,13 @@ auto main() -> int {
     auto service = std::move(service_result).value();
 
     auto server_result = service.server_builder().create();
-    // while (!server_result.has_value() && server_result.error() == ServerCreateError::ExceedsMaxSupportedServers) {
-    //     auto error_index = static_cast<uint64_t>(server_result.error());
-    //     std::cout << "#### retry after server create error: [" << error_index << "] "
-    //               << ServerCreateErrorStrings[error_index] << std::endl;
-    //     server_result = service.server_builder().create();
-    //     // break;
-    // }
+    while (!server_result.has_value() && server_result.error() == ServerCreateError::ExceedsMaxSupportedServers) {
+        auto error_index = static_cast<uint64_t>(server_result.error());
+        std::cout << "#### retry after server create error: [" << error_index << "] "
+                  << ServerCreateErrorStrings[error_index] << std::endl;
+        server_result = service.server_builder().create();
+        // break;
+    }
 
     if (!server_result.has_value()) {
         auto error_index = static_cast<uint64_t>(server_result.error());
