@@ -10,6 +10,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use iceoryx2_bb_concurrency::atomic::{AtomicBool, Ordering};
 use iceoryx2_bb_container::queue::RelocatableContainer;
 use iceoryx2_bb_elementary::CallbackProgression;
 use iceoryx2_bb_lock_free::mpmc::{
@@ -17,7 +18,7 @@ use iceoryx2_bb_lock_free::mpmc::{
     unique_index_set_enums::ReleaseMode,
 };
 use iceoryx2_bb_memory::bump_allocator::BumpAllocator;
-use iceoryx2_log::{error, fatal_panic};
+use iceoryx2_log::{error, fatal_panic, info};
 
 use crate::{
     identifiers::{UniqueClientId, UniqueNodeId, UniquePortId, UniqueServerId},
@@ -140,10 +141,15 @@ impl DynamicConfig {
             self.servers.recover(
                 node_id.owner_id(),
                 |registered_server| {
+                    info!("server:: cleanup {:?}", node_id.owner_id());
+                    let result =
+                        port_cleanup_callback(UniquePortId::Server(registered_server.server_id))
+                            == PortCleanupAction::RemovePort;
+                    if !result {
+                        error!("server cleanup failed");
+                    }
                     // additional comparision, since the node_id.owner_id() might be not enough
-                    registered_server.node_id == *node_id
-                        && port_cleanup_callback(UniquePortId::Server(registered_server.server_id))
-                            == PortCleanupAction::RemovePort
+                    registered_server.node_id == *node_id && result
                 },
                 ReleaseMode::Default,
             );
@@ -151,10 +157,15 @@ impl DynamicConfig {
             self.clients.recover(
                 node_id.owner_id(),
                 |registered_client| {
+                    info!("client:: cleanup {:?}", node_id.owner_id());
+                    let result =
+                        port_cleanup_callback(UniquePortId::Client(registered_client.client_id))
+                            == PortCleanupAction::RemovePort;
+                    if !result {
+                        error!("client cleanup failed");
+                    }
                     // additional comparision, since the node_id.owner_id() might be not enough
-                    registered_client.node_id == *node_id
-                        && port_cleanup_callback(UniquePortId::Client(registered_client.client_id))
-                            == PortCleanupAction::RemovePort
+                    registered_client.node_id == *node_id && result
                 },
                 ReleaseMode::Default,
             );

@@ -58,7 +58,9 @@ use iceoryx2_bb_elementary::CallbackProgression;
 use iceoryx2_bb_elementary_traits::non_null::NonNullCompat;
 use iceoryx2_bb_elementary_traits::testing::abandonable::Abandonable;
 use iceoryx2_bb_elementary_traits::zero_copy_send::ZeroCopySend;
+use iceoryx2_bb_posix::clock::Time;
 use iceoryx2_cal::dynamic_storage::DynamicStorage;
+use iceoryx2_log::{error, warn};
 
 /// The factory for
 /// [`MessagingPattern::RequestResponse`](crate::service::messaging_pattern::MessagingPattern::RequestResponse).
@@ -209,10 +211,14 @@ impl<
             .service
             .cleanup_dead_nodes_on_open
         {
+            let now = Time::now().unwrap();
+            error!("#### {now:?} blocking cleanup dead nodes in service");
             blocking_cleanup_dead_nodes_in_service(
                 &new_self,
                 shared_node.config().global.creation_timeout,
             );
+            let now = Time::now().unwrap();
+            error!("#### {now:?} finished blocking cleanup dead nodes in service");
         }
 
         new_self

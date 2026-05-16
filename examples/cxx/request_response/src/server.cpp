@@ -64,21 +64,23 @@ auto main() -> int {
 
 
     auto config = Config::global_config().to_owned();
-    config.global().node().set_cleanup_dead_nodes_on_creation(true);
-    config.global().node().set_cleanup_dead_nodes_on_destruction(true);
+    config.global().node().set_cleanup_dead_nodes_on_creation(false);
+    config.global().node().set_cleanup_dead_nodes_on_destruction(false);
     config.global().service().set_cleanup_dead_nodes_on_open(true);
 
     Node<ServiceType::Ipc>::list(config.view(), [](auto node_state) {
         node_state.alive([](const AliveNodeView<ServiceType::Ipc>& view) {
             if (view.details().has_value()) {
-                std::cout << "  alive: " << view.details()->executable().as_string() << std::endl;
+                std::cout << "  alive: (" << view.id().pid() << ") " << view.details()->executable().as_string()
+                          << std::endl;
             } else {
                 std::cout << "  alive: " << view.id() << std::endl;
             }
         });
         node_state.dead([](const DeadNodeView<ServiceType::Ipc>& view) {
             if (view.details().has_value()) {
-                std::cout << "  dead: " << view.details()->executable().as_string() << std::endl;
+                std::cout << "  dead:  (" << view.id().pid() << ") " << view.details()->executable().as_string()
+                          << std::endl;
             } else {
                 std::cout << "  dead: " << view.id() << std::endl;
             }
