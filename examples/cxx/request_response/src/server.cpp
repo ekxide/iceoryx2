@@ -71,14 +71,16 @@ auto main() -> int {
     Node<ServiceType::Ipc>::list(config.view(), [](auto node_state) {
         node_state.alive([](const AliveNodeView<ServiceType::Ipc>& view) {
             if (view.details().has_value()) {
-                std::cout << "  alive: " << view.details()->executable().as_string() << std::endl;
+                std::cout << "  alive: (" << view.id().pid() << ") " << view.details()->executable().as_string()
+                          << std::endl;
             } else {
                 std::cout << "  alive: " << view.id() << std::endl;
             }
         });
         node_state.dead([](const DeadNodeView<ServiceType::Ipc>& view) {
             if (view.details().has_value()) {
-                std::cout << "  dead: " << view.details()->executable().as_string() << std::endl;
+                std::cout << "  dead:  (" << view.id().pid() << ") " << view.details()->executable().as_string()
+                          << std::endl;
             } else {
                 std::cout << "  dead: " << view.id() << std::endl;
             }
@@ -132,18 +134,8 @@ auto main() -> int {
         }
         ++retry_count;
 
-        {
-            std::cout << "#### cleanup via service open" << std::endl;
-            auto config = Config::global_config().to_owned();
-            config.global().node().set_cleanup_dead_nodes_on_creation(false);
-            config.global().service().set_cleanup_dead_nodes_on_open(true);
-            auto node = NodeBuilder().config(config).create<ServiceType::Ipc>().value();
-            node.service_builder(ServiceName::create("My/Funk/ServiceName").value())
-                .request_response<uint64_t, TransmissionData>()
-                .max_servers(2)
-                .max_clients(1)
-                .open_or_create();
-        }
+        std::cout << "#### cleanup via service.blocking_cleanup_dead_nodes" << std::endl;
+        service.blocking_cleanup_dead_nodes(iox2::bb::Duration::from_millis(100));
 
         auto error_index = static_cast<uint64_t>(server_result.error());
         std::cout << "#### retry after server create error: [" << error_index << "] "

@@ -33,8 +33,8 @@ set id_client $spawn_id
 
 #### Test Assertion
 
-expect_output_from $id_server_1 "Server ready to receive requests!"
 expect_output_from $id_server_2 "Server ready to receive requests!"
+expect_output_from $id_server_1 "Server ready to receive requests!"
 expect_output_from $id_client "send request"
 # expect_output_from $id_server_1 "received request*"
 # expect_output_from $id_server_2 "received request*"
