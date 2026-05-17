@@ -101,6 +101,7 @@
 //! ```
 
 use core::alloc::Layout;
+use core::fmt::Debug;
 use iceoryx2_bb_concurrency::atomic::Ordering;
 use iceoryx2_bb_concurrency::atomic::{AtomicBool, AtomicU64};
 use iceoryx2_bb_elementary::bump_allocator::BumpAllocator;
@@ -108,7 +109,7 @@ use iceoryx2_bb_elementary::enum_gen;
 use iceoryx2_bb_elementary::relocatable_ptr::{PointerTrait, RelocatablePointer};
 use iceoryx2_bb_elementary_traits::allocator::AllocationError;
 use iceoryx2_bb_elementary_traits::relocatable_container::RelocatableContainer;
-use iceoryx2_log::{fail, fatal_panic};
+use iceoryx2_log::{error, fail, fatal_panic, info};
 
 use crate::mpmc::unique_index_set_enums::{
     ReleaseMode, ReleaseState, UniqueIndexCreationError, UniqueIndexSetAcquireFailure,
@@ -152,12 +153,28 @@ struct SetState {
 }
 
 #[repr(C)]
-#[derive(Debug)]
 pub struct RobustUniqueIndexSet {
     cell_ptr: RelocatablePointer<AtomicU64>,
     capacity: usize,
     is_memory_initialized: AtomicBool,
     generation_counter: AtomicU64,
+}
+
+impl Debug for RobustUniqueIndexSet {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "RobustUniqueIndexSet {{");
+        let cell_ptr = unsafe { self.cell_ptr.as_ptr() };
+        for n in 0..self.capacity {
+            let cell = unsafe { &*cell_ptr.add(n) };
+            if cell.load(Ordering::Relaxed) == OwnerId::EMPTY.0 {
+                write!(f, " [ ]");
+            } else {
+                write!(f, " [X]");
+            }
+        }
+
+        write!(f, " }}")
+    }
 }
 
 impl RelocatableContainer for RobustUniqueIndexSet {
@@ -175,7 +192,7 @@ impl RelocatableContainer for RobustUniqueIndexSet {
         allocator: &T,
     ) -> Result<(), AllocationError> {
         let msg = "Failed to initialize";
-        if self.is_memory_initialized.load(Ordering::Relaxed) {
+        if self.is_memory_initialized.load(Ordering::SeqCst) {
             fatal_panic!(from self,
                 "Memory already initialized. Initializing it twice may lead to undefined behavior.")
         }
@@ -202,7 +219,7 @@ impl RelocatableContainer for RobustUniqueIndexSet {
             };
         }
 
-        self.is_memory_initialized.store(true, Ordering::Relaxed);
+        self.is_memory_initialized.store(true, Ordering::SeqCst);
 
         Ok(())
     }
@@ -216,7 +233,7 @@ impl RobustUniqueIndexSet {
     #[inline(always)]
     fn verify_init(&self, source: &str) {
         debug_assert!(
-            self.is_memory_initialized.load(Ordering::Relaxed),
+            self.is_memory_initialized.load(Ordering::SeqCst),
             "Undefined behavior when calling RobustUniqueIndexSet::{source} and the object is not initialized."
         );
     }
@@ -224,7 +241,7 @@ impl RobustUniqueIndexSet {
     /// Returns if the [`RobustUniqueIndexSet`] is locked or not. If the set is locked no more indices
     /// can be borrowed.
     pub fn is_locked(&self) -> bool {
-        self.generation_counter.load(Ordering::Relaxed) == GENERATION_COUNTER_LOCK_INDICATOR
+        self.generation_counter.load(Ordering::SeqCst) == GENERATION_COUNTER_LOCK_INDICATOR
     }
 
     fn lock(&self) -> ReleaseState {
@@ -246,8 +263,8 @@ impl RobustUniqueIndexSet {
                 match self.generation_counter.compare_exchange(
                     state.generation_counter,
                     GENERATION_COUNTER_LOCK_INDICATOR,
-                    Ordering::Relaxed,
-                    Ordering::Relaxed,
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
                 ) {
                     Ok(_) => return ReleaseState::Locked,
                     Err(_) => continue,
@@ -310,7 +327,9 @@ impl RobustUniqueIndexSet {
             //   1. cell
             //   2. generation counter
             //////////////////////////////////////
-            let current_generation_count = self.generation_counter.load(Ordering::Acquire);
+            //let current_generation_count = self.generation_counter.load(Ordering::Acquire);
+            let current_generation_count = self.increment_generation_counter(Ordering::SeqCst);
+            //let current_generation_count = self.generation_counter.load(Ordering::Acquire);
 
             if current_generation_count == GENERATION_COUNTER_LOCK_INDICATOR {
                 fail!(from self, with UniqueIndexSetAcquireFailure::IsLocked,
@@ -323,8 +342,8 @@ impl RobustUniqueIndexSet {
                 match cell.compare_exchange(
                     OwnerId::EMPTY.0,
                     owner_id.0,
-                    Ordering::Relaxed,
-                    Ordering::Relaxed,
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
                 ) {
                     Ok(_) => {
                         //////////////////////////////////////
@@ -332,7 +351,7 @@ impl RobustUniqueIndexSet {
                         //   1. cell
                         //   2. generation counter
                         //////////////////////////////////////
-                        if self.increment_generation_counter(Ordering::Release)
+                        if self.increment_generation_counter(Ordering::SeqCst)
                             == GENERATION_COUNTER_LOCK_INDICATOR
                         {
                             fail!(from self, with UniqueIndexSetAcquireFailure::IsLocked,
@@ -344,7 +363,11 @@ impl RobustUniqueIndexSet {
                 }
             }
 
-            if current_generation_count == self.generation_counter.load(Ordering::Relaxed) {
+            if current_generation_count == self.generation_counter.load(Ordering::SeqCst) {
+                error!(
+                    "  {current_generation_count} failed to get index:: {:?}",
+                    self
+                );
                 fail!(from self, with UniqueIndexSetAcquireFailure::OutOfIndices,
                     "{msg} since the RobustUniqueIndexSet is out of indices.");
             }
@@ -374,8 +397,8 @@ impl RobustUniqueIndexSet {
         match cell.compare_exchange(
             owner_id.0,
             OwnerId::EMPTY.0,
-            Ordering::Relaxed,
-            Ordering::Relaxed,
+            Ordering::SeqCst,
+            Ordering::SeqCst,
         ) {
             Ok(_) => {
                 //////////////////////////////////////
@@ -383,7 +406,7 @@ impl RobustUniqueIndexSet {
                 //   1. cell
                 //   2. generation counter
                 //////////////////////////////////////
-                self.increment_generation_counter(Ordering::Release);
+                self.increment_generation_counter(Ordering::SeqCst);
             }
             Err(v) => {
                 fail!(from self,
@@ -432,8 +455,8 @@ impl RobustUniqueIndexSet {
                     .compare_exchange(
                         owner_id.0,
                         OwnerId::EMPTY.0,
-                        Ordering::Relaxed,
-                        Ordering::Relaxed,
+                        Ordering::SeqCst,
+                        Ordering::SeqCst,
                     )
                     .is_ok()
             {
@@ -443,11 +466,12 @@ impl RobustUniqueIndexSet {
                 //   1. cell
                 //   2. generation counter
                 //////////////////////////////////////
-                if self.increment_generation_counter(Ordering::Release)
-                    == GENERATION_COUNTER_LOCK_INDICATOR
-                {
+                let counter = self.increment_generation_counter(Ordering::SeqCst);
+                if counter == GENERATION_COUNTER_LOCK_INDICATOR {
                     return ReleaseState::Locked;
                 }
+
+                info!("  {counter} :: recovered index:: {:?}", self);
 
                 if mode == ReleaseMode::LockIfLastIndex {
                     self.lock();
@@ -466,7 +490,7 @@ impl RobustUniqueIndexSet {
     /// the index set would be opened for modification again and the lock would be
     /// reverted.
     fn increment_generation_counter(&self, ordering: Ordering) -> u64 {
-        let mut current_generation_count = self.generation_counter.load(Ordering::Relaxed);
+        let mut current_generation_count = self.generation_counter.load(Ordering::SeqCst);
         loop {
             if current_generation_count == GENERATION_COUNTER_LOCK_INDICATOR {
                 return GENERATION_COUNTER_LOCK_INDICATOR;
@@ -475,8 +499,8 @@ impl RobustUniqueIndexSet {
             match self.generation_counter.compare_exchange(
                 current_generation_count,
                 current_generation_count + 1,
-                ordering,
-                Ordering::Relaxed,
+                Ordering::SeqCst,
+                Ordering::SeqCst,
             ) {
                 Ok(_) => return current_generation_count + 1,
                 Err(v) => current_generation_count = v,

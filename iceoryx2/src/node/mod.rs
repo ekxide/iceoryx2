@@ -550,20 +550,23 @@ impl<Service: service::Service> DeadNodeView<Service> {
             match self.remove_stale_resources_impl() {
                 Ok(()) | Err(NodeCleanupFailure::ResourcesAlreadyCleanedUp) => return Ok(()),
                 Err(NodeCleanupFailure::AnotherInstanceIsCleaningUpTheNode) => (),
-                Err(e) => return Err(e),
+                Err(e) => {
+                    fail!(from self, with e,
+                        "{msg} since the underlying stale resource could not be removed. [{e:?}]");
+                }
             }
 
             fail!(from self,
-                  when adaptive_wait.wait(),
-                  with NodeCleanupFailure::InternalError,
-                  "{msg} since the adaptive wait failed.");
+                   when adaptive_wait.wait(),
+                   with NodeCleanupFailure::InternalError,
+                   "{msg} since the adaptive wait failed.");
 
             let elapsed = fail!(from self,
-                                when start.elapsed(),
-                                with NodeCleanupFailure::InternalError,
-                                "{msg} due to a failure while acquiring the elapsed time.");
+                                 when start.elapsed(),
+                                 with NodeCleanupFailure::InternalError,
+                                 "{msg} due to a failure while acquiring the elapsed time.");
 
-            if elapsed > timeout {
+            if elapsed > Duration::from_secs(10) {
                 fail!(from self, with NodeCleanupFailure::AnotherInstanceIsCleaningUpTheNode,
                     "{msg} since another instance requires longer than {timeout:?} to cleanup the resources.");
             }
@@ -593,7 +596,7 @@ impl<Service: service::Service> DeadNodeView<Service> {
                 // if swap returns true, someone else is holding the lock
                 if v.swap(true, Ordering::Relaxed) {
                     fail!(from self, with NodeCleanupFailure::AnotherInstanceIsCleaningUpTheNode,
-                        "{msg} since another instance is already cleaning up the dead nodes resources.");
+                        "{msg} since another thread in this process is already cleaning up the dead nodes resources.");
                 }
 
                 Ok(())
@@ -753,7 +756,7 @@ impl<Service: service::Service> DeadNodeView<Service> {
                 MonitoringCreateCleanerError::IsBeingCleanedUpOrAnotherCleanerCrashedDuringCleanup,
             ) => {
                 fail!(from self, with NodeCleanupFailure::AnotherInstanceIsCleaningUpTheNode,
-                    "{} since another instance is already cleaning up all resources.", msg);
+                    "{} since another instance is currently cleaning up all resources.", msg);
             }
             Err(MonitoringCreateCleanerError::DoesNotExist) => {
                 fail!(from self, with NodeCleanupFailure::ResourcesAlreadyCleanedUp,

@@ -137,23 +137,34 @@ pub(crate) fn blocking_cleanup_dead_nodes_in_service<T: PortFactory>(
     };
 
     if let Err(e) =  port_factory.nodes(|node_state| {
-        if let NodeState::Dead(node) = node_state {
-            let node_id = *node.id();
-            debug!(from port_factory, "Dead node ({:?}) detected", node_id);
-            match node.blocking_remove_stale_resources(timeout) {
-                Ok(()) => cleanup_state.cleanups +=1,
-                Err(NodeCleanupFailure::AnotherInstanceIsCleaningUpTheNode) => {
-                    cleanup_state.failed_cleanups += 1;
-                    warn!(from port_factory,
-                        "Stop waiting on another process to cleanup the dead node ({:?}) since the {timeout:?} expired. Abandoned ports of the dead node might block the creation of new ports! Try increasing the `global.node.creation_timeout` config parameter to mitigate this problem.",
-                        node_id);
+        match node_state {
+            NodeState::Dead(node) => {
+                let node_id = *node.id();
+                debug!(from port_factory, "Dead node ({:?}) detected", node_id);
+                match node.blocking_remove_stale_resources(timeout) {
+                    Ok(()) => cleanup_state.cleanups +=1,
+                    Err(NodeCleanupFailure::AnotherInstanceIsCleaningUpTheNode) => {
+                        cleanup_state.failed_cleanups += 1;
+                        warn!(from port_factory,
+                            "Stop waiting on another process to cleanup the dead node ({:?}) since the {timeout:?} expired. Abandoned ports of the dead node might block the creation of new ports! Try increasing the `global.node.creation_timeout` config parameter to mitigate this problem.",
+                            node_id);
+                    }
+                    Err(e) => {
+                        cleanup_state.failed_cleanups += 1;
+                        warn!(from port_factory,
+                            "Failed to remove dead node ({:?}) from service. Abandoned ports of the dead node might block the creation of new ports! [{e:?}]",
+                            node_id);
+                    }
                 }
-                Err(e) => {
-                    cleanup_state.failed_cleanups += 1;
-                    warn!(from port_factory,
-                        "Failed to remove dead node ({:?}) from service. Abandoned ports of the dead node might block the creation of new ports! [{e:?}]",
-                        node_id);
-                }
+            }
+            NodeState::Alive(node) => {
+                warn!("  >> me: ({})  Alive node {:?} detected", node.id().pid(), node.id().value());
+            }
+            NodeState::Inaccessible(node) => {
+                warn!("  >> me: ({})  Inaccessible node {:?} detected",  node.pid(), node.value());
+            }
+            NodeState::Undefined(node) => {
+                warn!("  >> me: ({})  Undefined node {:?} detected",  node.pid(), node.value());
             }
        }
         CallbackProgression::Continue
