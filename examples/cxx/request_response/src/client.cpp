@@ -55,7 +55,7 @@ const char* ClientCreateErrorStrings[] = {
     "FailedToDeployThreadsafetyPolicy",
 };
 
-constexpr auto MAX_RETRIES { 0 };
+constexpr auto MAX_RETRIES { 20 };
 
 auto main() -> int {
     using namespace iox2;
@@ -106,6 +106,11 @@ auto main() -> int {
             break;
         }
         ++retry_count;
+
+        if (retry_count >= MAX_RETRIES / 2) {
+            std::cout << "#### cleanup via node.blocking_cleanup_dead_nodes" << std::endl;
+            node.blocking_cleanup_dead_nodes(config.view(), iox2::bb::Duration::from_millis(100));
+        }
 
         auto error_index = static_cast<uint64_t>(service_result.error());
         std::cout << "#### retry after service open or create error: [" << error_index << "] "
