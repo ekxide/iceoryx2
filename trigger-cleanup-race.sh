@@ -21,7 +21,10 @@ cmake -S . -B target/ff/cc/build \
     -DBUILD_TESTING=ON
 cmake --build target/ff/cc/build -j$NUM_JOBS
 
-iterations=10000
+stress -c 32 &
+STRESS_PID=$!
+
+iterations=100000
 for i in $(seq 1 $iterations); do
     echo "## Iteration: $i of $iterations"
     # target/ff/cc/build/examples/cxx/publish_subscribe/example_cxx_publish_subscribe_publisher # acts as cleaner
@@ -33,3 +36,5 @@ target/ff/cc/build/examples/cxx/publish_subscribe/example_cxx_publish_subscribe_
 
 ls -la /dev/shm
 ls -laR /tmp/iceoryx2
+
+kill -9 $STRESS_PID
