@@ -17,10 +17,11 @@
 
 #include <iostream>
 
-constexpr iox2::bb::Duration CYCLE_TIME = iox2::bb::Duration::from_secs(1);
+constexpr iox2::bb::Duration CYCLE_TIME = iox2::bb::Duration::from_millis(1);
 
 auto main(int argc, char** argv) -> int {
     using namespace iox2;
+    std::cout << "#### subscriber starting" << std::endl;
     set_log_level_from_env_or(LogLevel::Info);
 
     check_for_help_from_args(argc, argv, []() -> auto {

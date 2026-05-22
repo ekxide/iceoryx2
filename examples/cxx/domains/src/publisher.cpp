@@ -17,10 +17,11 @@
 
 #include <iostream>
 
-constexpr iox2::bb::Duration CYCLE_TIME = iox2::bb::Duration::from_secs(1);
+constexpr iox2::bb::Duration CYCLE_TIME = iox2::bb::Duration::from_millis(1);
 
 auto main(int argc, char** argv) -> int {
     using namespace iox2;
+    std::cout << "#### publisher starting" << std::endl;
     set_log_level_from_env_or(LogLevel::Info);
 
     check_for_help_from_args(argc, argv, []() -> auto {
@@ -29,6 +30,8 @@ auto main(int argc, char** argv) -> int {
         std::cout << "Use '-d' or '--domain' to specify the name of the domain." << std::endl;
         std::cout << "Use '-s' or '--service' to specify the name of the service." << std::endl;
     });
+
+    std::cout << "#### publisher 1000" << std::endl;
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers) fine for the example
     const CliOption<32> option_domain { "-d",
@@ -44,12 +47,16 @@ auto main(int argc, char** argv) -> int {
     auto domain = parse_from_args(argc, argv, option_domain);
     auto service_name = parse_from_args(argc, argv, option_service);
 
+    std::cout << "#### publisher 2000" << std::endl;
+
     // create a new config based on the global config
     auto config = Config::global_config().to_owned();
 
     // The domain name becomes the prefix for all resources.
     // Therefore, different domain names never share the same resources.
     config.global().set_prefix(iox2::bb::FileName::create(domain).value());
+
+    std::cout << "#### publisher 3000" << std::endl;
 
     auto node = NodeBuilder()
                     // use the custom config when creating the custom node
@@ -63,10 +70,13 @@ auto main(int argc, char** argv) -> int {
                        .open_or_create()
                        .value();
 
+    std::cout << "#### publisher 4000" << std::endl;
+
     auto publisher = service.publisher_builder().create().value();
 
     auto counter = 0;
-    while (node.wait(CYCLE_TIME).has_value()) {
+    auto node_wait_result = node.wait(CYCLE_TIME);
+    while (node_wait_result.has_value()) {
         counter += 1;
 
         auto sample = publisher.loan_uninit().value();
@@ -78,6 +88,13 @@ auto main(int argc, char** argv) -> int {
 
         std::cout << "[domain: \"" << domain.unchecked_access().c_str() << "\", service: \""
                   << service_name.unchecked_access().c_str() << "] Send sample " << counter << "..." << std::endl;
+
+        node_wait_result = node.wait(CYCLE_TIME);
+    }
+
+    if (!node_wait_result.has_value()) {
+        std::cout << "#### node_wait_result has error: " << static_cast<uint32_t>(node_wait_result.error())
+                  << std::endl;
     }
 
     std::cout << "exit" << std::endl;

@@ -86,7 +86,9 @@ int main(void) {
 
     printf("Subscriber ready to receive data!\n");
 
-    while (iox2_node_wait(&node_handle, 1, 0) == IOX2_OK) {
+    const uint64_t DURATION_0S = 0;
+    const uint32_t DURATION_2_MS = 2000000;
+    while (iox2_node_wait(&node_handle, DURATION_0S, DURATION_2_MS) == IOX2_OK) {
         // receive sample
         iox2_sample_h sample = NULL;
         ret_val = iox2_subscriber_receive(&subscriber, NULL, &sample);

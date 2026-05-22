@@ -120,8 +120,9 @@ int main(void) {
 
     int32_t counter = 0;
     const uint64_t DURATION_0S = 0;
-    const uint32_t DURATION_500MS = 500000000;
-    while (iox2_node_wait(&node_handle, DURATION_0S, DURATION_500MS) == IOX2_OK) {
+    // const uint32_t DURATION_500MS = 500000000;
+    const uint32_t DURATION_1_MS = 1000000;
+    while (iox2_node_wait(&node_handle, DURATION_0S, DURATION_1_MS) == IOX2_OK) {
         counter += 1;
 
         // loan sample

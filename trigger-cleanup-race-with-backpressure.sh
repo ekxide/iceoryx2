@@ -1,0 +1,34 @@
+#! /bin/bash
+
+set -e
+
+cd $(git rev-parse --show-toplevel)
+
+NUM_JOBS=1
+if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "msys" ]]; then
+    NUM_JOBS=$(nproc)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    NUM_JOBS=$(sysctl -n hw.ncpu)
+fi
+
+# Build the C and C++ bindings
+cargo build --package iceoryx2-ffi-c
+cmake -S . -B target/ff/cc/build \
+    -DRUST_BUILD_ARTIFACT_PATH="$(pwd)/target/debug" \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DBUILD_CXX=ON \
+    -DBUILD_EXAMPLES=ON \
+    -DBUILD_TESTING=ON
+cmake --build target/ff/cc/build -j$NUM_JOBS
+
+iterations=10000
+for i in $(seq 1 $iterations); do
+    echo "## Iteration: $i of $iterations"
+    # target/ff/cc/build/examples/cxx/publish_subscribe/example_cxx_publish_subscribe_publisher # acts as cleaner
+    examples/c/publish_subscribe_with_backpressure/test_e2e_publish_subscribe_with_backpressure.exp
+done
+
+target/ff/cc/build/examples/cxx/publish_subscribe/example_cxx_publish_subscribe_publisher # acts as cleaner
+
+ls -la /dev/shm
+ls -laR /tmp/iceoryx2
