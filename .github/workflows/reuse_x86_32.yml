@@ -83,6 +83,7 @@ jobs:
       - name: Build workspace
         shell: bash
         run: |
+          rustc --version
           just build sdk +${{ inputs.toolchain }} --target i686-unknown-linux-gnu ${{ steps.set-build-flags.outputs.cargo-build-mode }} \
           -- \
           --all-targets \
@@ -91,6 +92,7 @@ jobs:
       - name: Test workspace
         shell: bash
         run: |
+          rustc --version
           just test sdk +${{ inputs.toolchain }} --target i686-unknown-linux-gnu ${{ steps.set-build-flags.outputs.cargo-build-mode }} \
           -- \
           --all-targets \

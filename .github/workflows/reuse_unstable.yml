@@ -81,12 +81,14 @@ jobs:
       - name: Run workspaces
         shell: bash
         run: |
+          rustc --version
           just build sdk +${{ inputs.toolchain }} ${{ steps.set-build-flags.outputs.cargo-build-mode }} -- --all-targets
           just build integrations +${{ inputs.toolchain }} ${{ steps.set-build-flags.outputs.cargo-build-mode }} -- --all-targets
 
       - name: Test workspaces
         shell: bash
         run: |
+          rustc --version
           just test sdk +${{ inputs.toolchain }} ${{ steps.set-build-flags.outputs.cargo-build-mode }} -- --all-targets --no-fail-fast
           just test integrations +${{ inputs.toolchain }} ${{ steps.set-build-flags.outputs.cargo-build-mode }} -- --all-targets --no-fail-fast
 
