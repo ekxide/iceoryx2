@@ -14,8 +14,8 @@ use std::sync::Arc;
 
 use iceoryx2::service::{Service, local_threadsafe};
 use iceoryx2_log::{fail, trace};
-use iceoryx2_services_tunnel_backend::traits::{Backend, BackendBuilder, ReactiveBackendBuilder};
-use iceoryx2_services_tunnel_backend::types::wake::WakeHandle;
+use iceoryx2_tunnel_backend::traits::{Backend, BackendBuilder, ReactiveBackendBuilder};
+use iceoryx2_tunnel_backend::types::wake::WakeHandle;
 
 use zenoh::{Config, Session, Wait};
 
@@ -73,7 +73,7 @@ impl<S: Service> Backend<S> for ZenohBackend<S> {
         Self::RelayFactory::new(&self.session, self.wake.clone())
     }
 
-    fn discovery(&self) -> &impl iceoryx2_services_tunnel_backend::traits::Discovery {
+    fn discovery(&self) -> &impl iceoryx2_tunnel_backend::traits::Discovery {
         &self.discovery
     }
 }

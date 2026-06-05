@@ -17,8 +17,8 @@ use iceoryx2::service::Service;
 use iceoryx2::service::local_threadsafe;
 use iceoryx2::service::static_config::StaticConfig;
 use iceoryx2_log::{fail, trace};
-use iceoryx2_services_tunnel_backend::traits::{EventRelay, RelayBuilder};
-use iceoryx2_services_tunnel_backend::types::wake::WakeHandle;
+use iceoryx2_tunnel_backend::traits::{EventRelay, RelayBuilder};
+use iceoryx2_tunnel_backend::types::wake::WakeHandle;
 
 use zenoh::pubsub::{Publisher, Subscriber};
 use zenoh::qos::Reliability;

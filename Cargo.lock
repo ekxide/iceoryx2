@@ -1484,95 +1484,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "iceoryx2-services-tunnel"
-version = "0.9.999"
-dependencies = [
- "iceoryx2",
- "iceoryx2-bb-concurrency",
- "iceoryx2-bb-container",
- "iceoryx2-log",
- "iceoryx2-services-common",
- "iceoryx2-services-discovery",
- "iceoryx2-services-tunnel-backend",
-]
-
-[[package]]
-name = "iceoryx2-services-tunnel-backend"
-version = "0.9.999"
-dependencies = [
- "iceoryx2",
- "iceoryx2-bb-posix",
- "iceoryx2-services-common",
-]
-
-[[package]]
-name = "iceoryx2-services-tunnel-conformance-tests"
-version = "0.9.999"
-dependencies = [
- "iceoryx2",
- "iceoryx2-bb-posix",
- "iceoryx2-bb-testing",
- "iceoryx2-bb-testing-macros",
- "iceoryx2-services-common",
- "iceoryx2-services-discovery",
- "iceoryx2-services-tunnel",
- "iceoryx2-services-tunnel-backend",
- "iceoryx2-services-tunnel-conformance-tests-common",
-]
-
-[[package]]
-name = "iceoryx2-services-tunnel-conformance-tests-common"
-version = "0.9.999"
-dependencies = [
- "iceoryx2",
- "iceoryx2-bb-loggers",
- "iceoryx2-bb-testing",
- "iceoryx2-bb-testing-macros",
- "iceoryx2-pal-print",
- "iceoryx2-services-tunnel-conformance-tests",
- "iceoryx2-services-tunnel-testing",
-]
-
-[[package]]
-name = "iceoryx2-services-tunnel-conformance-tests-nostd"
-version = "0.9.999"
-dependencies = [
- "iceoryx2",
- "iceoryx2-bb-elementary-traits",
- "iceoryx2-bb-loggers",
- "iceoryx2-bb-memory",
- "iceoryx2-bb-testing",
- "iceoryx2-services-tunnel-conformance-tests",
- "iceoryx2-services-tunnel-conformance-tests-common",
-]
-
-[[package]]
-name = "iceoryx2-services-tunnel-end-to-end-tests"
-version = "0.9.999"
-dependencies = [
- "clap",
- "iceoryx2",
- "iceoryx2-bb-container",
- "iceoryx2-bb-posix",
- "iceoryx2-log",
-]
-
-[[package]]
-name = "iceoryx2-services-tunnel-testing"
-version = "0.9.999"
-dependencies = [
- "iceoryx2",
- "iceoryx2-bb-concurrency",
- "iceoryx2-bb-elementary",
- "iceoryx2-bb-posix",
- "iceoryx2-bb-system-types",
- "iceoryx2-services-common",
- "iceoryx2-services-tunnel-backend",
- "postcard",
- "serde",
-]
-
-[[package]]
 name = "iceoryx2-testing"
 version = "0.9.999"
 dependencies = [
@@ -1608,6 +1519,95 @@ dependencies = [
  "iceoryx2-bb-testing",
  "iceoryx2-bb-testing-macros",
  "iceoryx2-tests-common",
+]
+
+[[package]]
+name = "iceoryx2-tunnel"
+version = "0.9.999"
+dependencies = [
+ "iceoryx2",
+ "iceoryx2-bb-concurrency",
+ "iceoryx2-bb-container",
+ "iceoryx2-log",
+ "iceoryx2-services-common",
+ "iceoryx2-services-discovery",
+ "iceoryx2-tunnel-backend",
+]
+
+[[package]]
+name = "iceoryx2-tunnel-backend"
+version = "0.9.999"
+dependencies = [
+ "iceoryx2",
+ "iceoryx2-bb-posix",
+ "iceoryx2-services-common",
+]
+
+[[package]]
+name = "iceoryx2-tunnel-conformance-tests"
+version = "0.9.999"
+dependencies = [
+ "iceoryx2",
+ "iceoryx2-bb-posix",
+ "iceoryx2-bb-testing",
+ "iceoryx2-bb-testing-macros",
+ "iceoryx2-services-common",
+ "iceoryx2-services-discovery",
+ "iceoryx2-tunnel",
+ "iceoryx2-tunnel-backend",
+ "iceoryx2-tunnel-conformance-tests-common",
+]
+
+[[package]]
+name = "iceoryx2-tunnel-conformance-tests-common"
+version = "0.9.999"
+dependencies = [
+ "iceoryx2",
+ "iceoryx2-bb-loggers",
+ "iceoryx2-bb-testing",
+ "iceoryx2-bb-testing-macros",
+ "iceoryx2-pal-print",
+ "iceoryx2-tunnel-conformance-tests",
+ "iceoryx2-tunnel-testing",
+]
+
+[[package]]
+name = "iceoryx2-tunnel-conformance-tests-nostd"
+version = "0.9.999"
+dependencies = [
+ "iceoryx2",
+ "iceoryx2-bb-elementary-traits",
+ "iceoryx2-bb-loggers",
+ "iceoryx2-bb-memory",
+ "iceoryx2-bb-testing",
+ "iceoryx2-tunnel-conformance-tests",
+ "iceoryx2-tunnel-conformance-tests-common",
+]
+
+[[package]]
+name = "iceoryx2-tunnel-end-to-end-tests"
+version = "0.9.999"
+dependencies = [
+ "clap",
+ "iceoryx2",
+ "iceoryx2-bb-container",
+ "iceoryx2-bb-posix",
+ "iceoryx2-log",
+]
+
+[[package]]
+name = "iceoryx2-tunnel-testing"
+version = "0.9.999"
+dependencies = [
+ "iceoryx2",
+ "iceoryx2-bb-concurrency",
+ "iceoryx2-bb-elementary",
+ "iceoryx2-bb-posix",
+ "iceoryx2-bb-system-types",
+ "iceoryx2-services-common",
+ "iceoryx2-tunnel-backend",
+ "postcard",
+ "serde",
 ]
 
 [[package]]

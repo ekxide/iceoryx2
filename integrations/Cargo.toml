@@ -34,9 +34,9 @@ iceoryx2-bb-posix = { version = "0.9.999", path = "../iceoryx2-bb/posix/" }
 iceoryx2-bb-testing = { version = "0.9.999", path = "../iceoryx2-bb/testing/" }
 iceoryx2-bb-testing-macros = { version = "0.9.999", path = "../iceoryx2-bb/testing-macros/" }
 iceoryx2-services-common = { version = "0.9.999", path = "../iceoryx2-services/common" }
-iceoryx2-services-tunnel = { version = "0.9.999", path = "../iceoryx2-services/tunnel" }
-iceoryx2-services-tunnel-backend = { version = "0.9.999", path = "../iceoryx2-services/tunnel-backend" }
-iceoryx2-services-tunnel-conformance-tests = { version = "0.9.999", path = "../iceoryx2-services/tunnel-conformance-tests" }
+iceoryx2-tunnel = { version = "0.9.999", path = "../iceoryx2-services/tunnel" }
+iceoryx2-tunnel-backend = { version = "0.9.999", path = "../iceoryx2-services/tunnel-backend" }
+iceoryx2-tunnel-conformance-tests = { version = "0.9.999", path = "../iceoryx2-services/tunnel-conformance-tests" }
 
 anyhow = { version = "1.0.86" }
 better-panic = { version = "0.3.0" }

@@ -117,7 +117,7 @@ impl Discovery {
     }
 }
 
-impl iceoryx2_services_tunnel_backend::traits::Discovery for Discovery {
+impl iceoryx2_tunnel_backend::traits::Discovery for Discovery {
     type DiscoveryError = DiscoveryError;
     type AnnouncementError = AnnouncementError;
 

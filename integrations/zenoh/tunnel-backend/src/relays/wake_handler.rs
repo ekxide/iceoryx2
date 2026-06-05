@@ -16,7 +16,7 @@
 use std::sync::Arc;
 
 use iceoryx2::service::local_threadsafe;
-use iceoryx2_services_tunnel_backend::types::wake::WakeHandle;
+use iceoryx2_tunnel_backend::types::wake::WakeHandle;
 use zenoh::handlers::{Callback, IntoHandler};
 
 /// FIFO-buffered handler factory that signals a [`WakeHandle`] on every push.

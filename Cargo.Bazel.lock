@@ -6556,7 +6556,7 @@
       "targets": [
         {
           "Library": {
-            "crate_name": "iceoryx2_services_tunnel",
+            "crate_name": "iceoryx2_tunnel",
             "crate_root": "src/lib.rs",
             "srcs": {
               "allow_empty": true,
@@ -6567,7 +6567,7 @@
           }
         }
       ],
-      "library_target_name": "iceoryx2_services_tunnel",
+      "library_target_name": "iceoryx2_tunnel",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -6597,7 +6597,7 @@
       "targets": [
         {
           "Library": {
-            "crate_name": "iceoryx2_services_tunnel_backend",
+            "crate_name": "iceoryx2_tunnel_backend",
             "crate_root": "src/lib.rs",
             "srcs": {
               "allow_empty": true,
@@ -6608,7 +6608,7 @@
           }
         }
       ],
-      "library_target_name": "iceoryx2_services_tunnel_backend",
+      "library_target_name": "iceoryx2_tunnel_backend",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -6638,7 +6638,7 @@
       "targets": [
         {
           "Library": {
-            "crate_name": "iceoryx2_services_tunnel_conformance_tests",
+            "crate_name": "iceoryx2_tunnel_conformance_tests",
             "crate_root": "src/lib.rs",
             "srcs": {
               "allow_empty": true,
@@ -6649,7 +6649,7 @@
           }
         }
       ],
-      "library_target_name": "iceoryx2_services_tunnel_conformance_tests",
+      "library_target_name": "iceoryx2_tunnel_conformance_tests",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -6679,7 +6679,7 @@
       "targets": [
         {
           "Library": {
-            "crate_name": "iceoryx2_services_tunnel_conformance_tests_common",
+            "crate_name": "iceoryx2_tunnel_conformance_tests_common",
             "crate_root": "src/lib.rs",
             "srcs": {
               "allow_empty": true,
@@ -6690,7 +6690,7 @@
           }
         }
       ],
-      "library_target_name": "iceoryx2_services_tunnel_conformance_tests_common",
+      "library_target_name": "iceoryx2_tunnel_conformance_tests_common",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -6748,7 +6748,7 @@
       "targets": [
         {
           "Library": {
-            "crate_name": "iceoryx2_services_tunnel_end_to_end_tests",
+            "crate_name": "iceoryx2_tunnel_end_to_end_tests",
             "crate_root": "common/src/lib.rs",
             "srcs": {
               "allow_empty": true,
@@ -6759,7 +6759,7 @@
           }
         }
       ],
-      "library_target_name": "iceoryx2_services_tunnel_end_to_end_tests",
+      "library_target_name": "iceoryx2_tunnel_end_to_end_tests",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -6791,7 +6791,7 @@
       "targets": [
         {
           "Library": {
-            "crate_name": "iceoryx2_services_tunnel_testing",
+            "crate_name": "iceoryx2_tunnel_testing",
             "crate_root": "src/lib.rs",
             "srcs": {
               "allow_empty": true,
@@ -6802,7 +6802,7 @@
           }
         }
       ],
-      "library_target_name": "iceoryx2_services_tunnel_testing",
+      "library_target_name": "iceoryx2_tunnel_testing",
       "common_attrs": {
         "compile_data_glob": [
           "**"

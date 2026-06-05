@@ -13,7 +13,7 @@
 use std::sync::Arc;
 
 use iceoryx2::service::{Service, local_threadsafe, static_config::StaticConfig};
-use iceoryx2_services_tunnel_backend::{traits::RelayFactory, types::wake::WakeHandle};
+use iceoryx2_tunnel_backend::{traits::RelayFactory, types::wake::WakeHandle};
 
 use zenoh::Session;
 

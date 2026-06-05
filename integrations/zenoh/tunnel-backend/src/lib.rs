@@ -15,7 +15,7 @@
 //! A [Zenoh](https://zenoh.io)-based backend for the iceoryx2 tunnel service.
 //!
 //! This crate implements the tunnel
-//! [`Backend`](iceoryx2_services_tunnel_backend::traits::Backend) trait,
+//! [`Backend`](iceoryx2_tunnel_backend::traits::Backend) trait,
 //! providing a ready-to-use transport layer that forwards iceoryx2 communication
 //! over the Zenoh protocol. Zenoh handles peer discovery, session management, and
 //! network routing, so the tunnel can operate in a variety of network topologies
@@ -24,7 +24,7 @@
 //! ## Usage
 //!
 //! ```rust,ignore
-//! use iceoryx2_services_tunnel::{Config, Tunnel};
+//! use iceoryx2_tunnel::{Config, Tunnel};
 //! use iceoryx2_integrations_zenoh_tunnel_backend::ZenohBackend;
 //!
 //! let tunnel_config = Config::default();

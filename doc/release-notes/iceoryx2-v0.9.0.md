@@ -218,7 +218,7 @@
     use iceoryx2_tunnel::{Config, Tunnel};
 
     // new
-    use iceoryx2_services_tunnel::{Config, Tunnel};
+    use iceoryx2_tunnel::{Config, Tunnel};
     ```
 
 1. The `unable to deliver strategy` was renamed to `backpressure strategy`

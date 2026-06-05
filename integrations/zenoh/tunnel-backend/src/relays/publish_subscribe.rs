@@ -19,7 +19,7 @@ use iceoryx2::service::{
     static_config::StaticConfig,
 };
 use iceoryx2_log::{fail, trace};
-use iceoryx2_services_tunnel_backend::{
+use iceoryx2_tunnel_backend::{
     traits::{PublishSubscribeRelay, RelayBuilder},
     types::publish_subscribe::{LoanFn, SampleMut},
     types::wake::WakeHandle,

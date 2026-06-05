@@ -28,8 +28,8 @@ use iceoryx2_log::set_log_level_from_env_or;
 use iceoryx2_log::warn;
 
 use iceoryx2_integrations_zenoh_tunnel_backend::ZenohBackend;
-use iceoryx2_services_tunnel::Config as TunnelConfig;
-use iceoryx2_services_tunnel::Tunnel;
+use iceoryx2_tunnel::Config as TunnelConfig;
+use iceoryx2_tunnel::Tunnel;
 
 const ORIGIN: &str = "iox2-tunnel-zenoh";
 
