@@ -2,7 +2,7 @@ name: Build and Test
 
 on:
   push:
-    branches: [main, release*]
+    branches: [main, release*, iox2-3-shift-freebsd-job)]
   pull_request:
     branches: [main, release*]
     types: [opened, ready_for_review, reopened, synchronize]
@@ -10,7 +10,7 @@ on:
 
 jobs:
   changes:
-    if: github.event.pull_request.draft == false
+    if: 0
     runs-on: ubuntu-slim
     permissions:
       pull-requests: read
@@ -33,7 +33,7 @@ jobs:
 
   preflight-check:
     needs: changes
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -79,7 +79,7 @@ jobs:
           just verify integrations-ros2 std-propagation
 
   nightly-check:
-    if: github.event.pull_request.draft == false
+    if: 0
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -102,7 +102,7 @@ jobs:
 
   linting-markdown:
     needs: changes
-    if: ${{ needs.changes.outputs.markdown == 'true' }}
+    if: 0
     timeout-minutes: 10
     runs-on: ubuntu-slim
     steps:
@@ -130,7 +130,7 @@ jobs:
 
   static-code-analysis-cpp:
     needs: changes
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     timeout-minutes: 40
     runs-on: ubuntu-latest
     steps:
@@ -151,7 +151,7 @@ jobs:
   # Static Code Analysis on other variants
   static-code-analysis-rust:
     needs: changes
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -204,7 +204,7 @@ jobs:
 
   python-bindings:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -247,7 +247,7 @@ jobs:
 
   end-to-end-tests:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-24.04]
@@ -297,7 +297,7 @@ jobs:
 
   end-to-end-tests-tunnel:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         tunnel: [zenoh]
@@ -359,7 +359,7 @@ jobs:
 
   x86_32-debug:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-latest] # [windows-latest, ubuntu-latest, macos-latest]
@@ -372,7 +372,7 @@ jobs:
 
   sdk-stable-debug:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -389,7 +389,7 @@ jobs:
 
   integrations-zenoh-stable-debug:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -403,7 +403,7 @@ jobs:
 
   integrations-ros2-stable-debug:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       fail-fast: false
       matrix:
@@ -419,7 +419,7 @@ jobs:
 
   sdk-stable-release:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     uses: ./.github/workflows/reuse_stable.yml
     with:
       os: ubuntu-latest
@@ -429,7 +429,7 @@ jobs:
 
   integrations-zenoh-stable-release:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     uses: ./.github/workflows/reuse_stable.yml
     with:
       os: ubuntu-latest
@@ -439,7 +439,7 @@ jobs:
 
   unstable:
     needs: [preflight-check, cargo-nextest]
-    if: ${{ needs.changes.outputs.source-code == 'true' && github.ref != 'refs/heads/main' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -451,7 +451,7 @@ jobs:
       profile: "debug"
 
   freebsd:
-    needs: [preflight-check]
+    #needs: [preflight-check]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -474,6 +474,7 @@ jobs:
           release: ${{ matrix.freebsd_version }}
           mem: 16384
           copyback: false
+          usesh: true
           prepare: pkg install -y cmake curl gcc git llvm
           run: |
             git config --global --add safe.directory /home/runner/work/iceoryx2/iceoryx2
@@ -488,7 +489,7 @@ jobs:
   # NOTE: No Bazel build for zenoh workspace. This is on purpose.
   Bazel:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     strategy:
       matrix:
         os: [ubuntu-24.04]
@@ -539,17 +540,17 @@ jobs:
 
   cxx-vocabulary-types:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     uses: ./.github/workflows/reuse_cxx_vocabulary_types.yml
 
   no_std:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     uses: ./.github/workflows/reuse_no_std.yml
 
   cargo-publish-dry-run:
     needs: [preflight-check]
-    if: ${{ needs.changes.outputs.source-code == 'true' }}
+    if: 0
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
