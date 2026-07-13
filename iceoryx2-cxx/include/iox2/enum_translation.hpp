@@ -1960,6 +1960,8 @@ constexpr auto from<int, iox2::ListenerCreateError>(const int value) noexcept ->
         return iox2::ListenerCreateError::FailedToDeployThreadsafetyPolicy;
     case iox2_listener_create_error_e_UNABLE_TO_CREATE_PORT_TAG:
         return iox2::ListenerCreateError::UnableToCreatePortTag;
+    case iox2_listener_create_error_e_EVENT_ID_OUT_OF_BOUNDS:
+        return iox2::ListenerCreateError::EventIdOutOfBounds;
     }
 
     IOX2_UNREACHABLE();
@@ -1978,6 +1980,8 @@ from<iox2::ListenerCreateError, iox2_listener_create_error_e>(const iox2::Listen
         return iox2_listener_create_error_e_FAILED_TO_DEPLOY_THREAD_SAFETY_POLICY;
     case iox2::ListenerCreateError::UnableToCreatePortTag:
         return iox2_listener_create_error_e_UNABLE_TO_CREATE_PORT_TAG;
+    case iox2::ListenerCreateError::EventIdOutOfBounds:
+        return iox2_listener_create_error_e_EVENT_ID_OUT_OF_BOUNDS;
     }
 
     IOX2_UNREACHABLE();

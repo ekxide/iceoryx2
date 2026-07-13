@@ -13,7 +13,7 @@
 pub use crate::config::Config;
 pub use crate::node::{Node, NodeBuilder, NodeState, node_name::NodeName};
 pub use crate::port::{
-    EventActivation, backpressure_strategy::BackpressureStrategy, event_id::EventId,
+    EventActivation, GroupId, backpressure_strategy::BackpressureStrategy, event_id::EventId,
     port_name::PortName,
 };
 pub use crate::service::marker::Flatbuffer;

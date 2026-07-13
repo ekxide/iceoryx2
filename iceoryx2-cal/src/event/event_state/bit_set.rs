@@ -11,11 +11,17 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 pub use iceoryx2_bb_lock_free::mpmc::bit_set::RelocatableBitSet;
-use iceoryx2_log::fail;
+use iceoryx2_log::{error, fail};
 
-use crate::event::event_state::{EventActivation, EventId, EventState, EventStateActivateError};
+use crate::event::event_state::{
+    EventActivation, EventId, EventState, EventStateActivateError, GroupId,
+};
 
 impl EventState for RelocatableBitSet {
+    fn set_event_groups(&mut self, _grouped_events: &[(GroupId, EventId)]) {
+        error!("Groups are currently not supported for the RelocatableBitSet");
+    }
+
     fn max_event_count(&self) -> u64 {
         1
     }
@@ -24,14 +30,14 @@ impl EventState for RelocatableBitSet {
         EventId::new(self.capacity().saturating_sub(1))
     }
 
-    fn activate(&self, event_id: EventId) -> Result<(), EventStateActivateError> {
+    fn activate(&self, event_id: EventId) -> Result<bool, EventStateActivateError> {
         if self.max_event_id() < event_id {
             fail!(from self, with EventStateActivateError::EventIdOutOfBounds,
                 "Unable to activate {event_id:?} since it is out of bounds (max = {:?}).", self.max_event_id());
         }
         self.set(event_id.as_value());
 
-        Ok(())
+        Ok(true)
     }
 
     fn drain<F: FnMut(EventActivation)>(&self, callback: &mut F) -> u64 {

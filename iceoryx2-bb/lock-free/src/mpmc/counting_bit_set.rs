@@ -229,22 +229,40 @@ pub mod details {
             unsafe { &(*self.data_ptr.as_ptr().add(id)) }.fetch_add(1, Ordering::Relaxed) as _
         }
 
+        /// Increments the counter for the bit at the given index and returns the previous count.
+        pub fn peak(&self, id: usize) -> u64 {
+            self.verify_init("peak()");
+            debug_assert!(
+                id < self.capacity(),
+                "This should never happen. Out of bounds access with index {id}."
+            );
+
+            unsafe { &(*self.data_ptr.as_ptr().add(id)) }.load(Ordering::Relaxed) as _
+        }
+
+        /// Resets one bit in the [`CountingBitSet`] and call the provided callback if the bit
+        /// had a non-zero count.
+        pub fn reset<F: FnMut(BitState)>(&self, id: usize, mut callback: F) {
+            self.verify_init("reset()");
+
+            let count = unsafe { (*self.data_ptr.as_ptr().add(id)).swap(0, Ordering::Relaxed) };
+            if count == 0 {
+                return;
+            }
+
+            callback(BitState {
+                bit: id,
+                count: count as _,
+            })
+        }
+
         /// Reset every bit in the [`CountingBitSet`] and call the provided callback for every bit
         /// that had a non-zero count.
         pub fn reset_all<F: FnMut(BitState)>(&self, mut callback: F) {
             self.verify_init("reset_all()");
 
             for bit in 0..self.capacity {
-                let count =
-                    unsafe { (*self.data_ptr.as_ptr().add(bit)).swap(0, Ordering::Relaxed) };
-                if count == 0 {
-                    continue;
-                }
-
-                callback(BitState {
-                    bit,
-                    count: count as _,
-                })
+                self.reset(bit, |bit_state| callback(bit_state));
             }
         }
     }

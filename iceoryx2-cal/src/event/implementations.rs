@@ -12,6 +12,7 @@
 
 use crate::{
     dynamic_storage,
+    event::event_state::counting_bit_set::RelocatableCountingBitSetEventState,
     event::trigger::{
         State,
         semaphore::{GenericSemaphoreTrigger, SemaphoreMgmt},
@@ -19,9 +20,8 @@ use crate::{
         unix_datagram_socket::GenericUnixDatagramSocketTrigger,
     },
 };
-use iceoryx2_bb_lock_free::mpmc::{
-    bit_set::RelocatableBitSet, counting_bit_set::RelocatableCountingBitSet,
-};
+
+use iceoryx2_bb_lock_free::mpmc::bit_set::RelocatableBitSet;
 
 pub type UnixDatagramShmBitSet = GenericUnixDatagramSocketTrigger<
     RelocatableBitSet,
@@ -29,12 +29,12 @@ pub type UnixDatagramShmBitSet = GenericUnixDatagramSocketTrigger<
 >;
 
 pub type UnixDatagramShmCountingBitSet = GenericUnixDatagramSocketTrigger<
-    RelocatableCountingBitSet,
-    dynamic_storage::posix_shared_memory::Storage<State<RelocatableCountingBitSet, ()>>,
+    RelocatableCountingBitSetEventState,
+    dynamic_storage::posix_shared_memory::Storage<State<RelocatableCountingBitSetEventState, ()>>,
 >;
 
 pub type SocketPairBitSet = GenericSocketPairTrigger<RelocatableBitSet>;
-pub type SocketPairCountingBitSet = GenericSocketPairTrigger<RelocatableCountingBitSet>;
+pub type SocketPairCountingBitSet = GenericSocketPairTrigger<RelocatableCountingBitSetEventState>;
 
 pub type SemaphoreShmBitSet = GenericSemaphoreTrigger<
     RelocatableBitSet,
@@ -42,6 +42,8 @@ pub type SemaphoreShmBitSet = GenericSemaphoreTrigger<
 >;
 
 pub type SemaphoreShmCountingBitSet = GenericSemaphoreTrigger<
-    RelocatableCountingBitSet,
-    dynamic_storage::posix_shared_memory::Storage<State<RelocatableCountingBitSet, SemaphoreMgmt>>,
+    RelocatableCountingBitSetEventState,
+    dynamic_storage::posix_shared_memory::Storage<
+        State<RelocatableCountingBitSetEventState, SemaphoreMgmt>,
+    >,
 >;

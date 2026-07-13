@@ -50,6 +50,7 @@ pub mod writer;
 /// receiver is full and the service does not overflow.
 pub mod backpressure_strategy;
 
+pub use iceoryx2_cal::event::event_state::GroupId;
 pub use iceoryx2_cal::zero_copy_connection::BackpressureToReceiverAction;
 
 /// Defines the action that shall be take when data cannot be delivered. Is used as

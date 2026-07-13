@@ -18,7 +18,7 @@ use crate::{
         DEFAULT_MAX_EVENT_ID, Event, EventId, Listener, ListenerBuilder, ListenerCreateError,
         ListenerWaitError, NamedConcept, NamedConceptBuilder, NamedConceptMgmt, Notifier,
         NotifierBuilder, NotifierNotifyError, NotifierOpenError,
-        event_state::{EventActivation, EventState},
+        event_state::{EventActivation, EventState, GroupId},
         trigger::{HandlerInterface, State, WaiterInterface, stub::Stub},
     },
     named_concept::NamedConceptConfiguration,
@@ -311,9 +311,18 @@ impl<
         let msg = "Unable to notify";
         let mgmt = self.storage.get();
 
-        fail!(from self,
-              when mgmt.event.activate(event_id),
+        let activated = match mgmt.event.activate(event_id) {
+            Ok(activated) => activated,
+            Err(e) => {
+                fail!(from self,
+              with e.into(),
               "{msg} with {event_id:?} since the activation failed.");
+            }
+        };
+
+        if !activated {
+            return Ok(());
+        }
 
         let set_state_to_notified = || {
             let _ = mgmt.notification_state.compare_exchange(
@@ -610,6 +619,7 @@ pub struct WaiterBuilder<
 > {
     name: FileName,
     event_id_max: EventId,
+    event_groups: Vec<(GroupId, EventId)>,
     config: Configuration<E, Mgmt, Storage>,
     _data_1: PhantomData<H>,
     _data_2: PhantomData<W>,
@@ -627,6 +637,7 @@ impl<
         Self {
             name: *name,
             event_id_max: DEFAULT_MAX_EVENT_ID,
+            event_groups: Vec::new(),
             config: Configuration::default(),
             _data_1: PhantomData,
             _data_2: PhantomData,
@@ -655,6 +666,11 @@ impl<
         self
     }
 
+    fn event_groups(mut self, event_groups: Vec<(GroupId, EventId)>) -> Self {
+        self.event_groups = event_groups;
+        self
+    }
+
     fn create(
         self,
     ) -> Result<<EventImpl<E, Mgmt, Storage, H, W> as Event<E>>::Listener, ListenerCreateError>
@@ -675,6 +691,7 @@ impl<
                 });
 
                 unsafe { value.assume_init_mut().event.init(allocator).unwrap() };
+                unsafe { value.assume_init_mut().event.set_event_groups(&self.event_groups); };
                 match W::create(
                     &self.name,
                     &self.config.to_trigger_config(),

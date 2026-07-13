@@ -46,7 +46,7 @@ use iceoryx2_bb_concurrency::cell::UnsafeCell;
 use iceoryx2_bb_elementary::CallbackProgression;
 use iceoryx2_bb_elementary_traits::testing::abandonable::Abandonable;
 use iceoryx2_bb_lock_free::mpmc::container::{ContainerHandle, ContainerState};
-use iceoryx2_bb_lock_free::mpmc::counting_bit_set::RelocatableCountingBitSet;
+use iceoryx2_cal::event::event_state::counting_bit_set::RelocatableCountingBitSetEventState;
 use iceoryx2_cal::{
     arc_sync_policy::ArcSyncPolicy, dynamic_storage::DynamicStorage, event::NotifierBuilder,
 };
@@ -124,7 +124,7 @@ impl core::error::Error for NotifierNotifyError {}
 
 #[derive(Debug)]
 struct Connection<Service: service::Service> {
-    notifier: <Service::Event as Event<RelocatableCountingBitSet>>::Notifier,
+    notifier: <Service::Event as Event<RelocatableCountingBitSetEventState>>::Notifier,
     listener_id: UniqueListenerId,
     node_id: UniqueNodeId,
 }
@@ -169,9 +169,11 @@ impl<Service: service::Service> ListenerConnections<Service> {
         let event_name = event_concept_name(&listener_id);
         let event_config = event_config::<Service>(self.service_state.shared_node().config());
         if self.get(index).is_none() {
-            match <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::NotifierBuilder::new(&event_name)
-                .config(&event_config)
-                .open()
+            match <Service::Event as iceoryx2_cal::event::Event<
+                RelocatableCountingBitSetEventState,
+            >>::NotifierBuilder::new(&event_name)
+            .config(&event_config)
+            .open()
             {
                 Ok(notifier) => {
                     *self.get_mut(index) = Some(Connection {

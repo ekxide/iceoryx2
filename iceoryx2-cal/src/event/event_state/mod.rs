@@ -14,6 +14,9 @@ pub mod bit_set;
 pub mod counting_bit_set;
 
 use core::fmt::Debug;
+use core::num::NonZero;
+use iceoryx2_bb_container::vector::*;
+use iceoryx2_bb_derive_macros::ZeroCopySend;
 use iceoryx2_bb_elementary_traits::relocatable_container::RelocatableContainer;
 use iceoryx2_bb_elementary_traits::zero_copy_send::ZeroCopySend;
 
@@ -45,10 +48,39 @@ impl core::fmt::Display for EventStateActivateError {
 
 impl core::error::Error for EventStateActivateError {}
 
+#[derive(Debug, ZeroCopySend, Copy, Clone)]
+#[repr(C)]
+pub struct GroupId(u8);
+
+impl GroupId {
+    const NO_GROUP: u8 = 0;
+
+    pub fn new(value: NonZero<u8>) -> Self {
+        Self(value.get())
+    }
+
+    pub fn as_value(&self) -> u8 {
+        self.0
+    }
+}
+
+#[derive(Debug, ZeroCopySend)]
+#[repr(C)]
+pub struct GroupInfo {
+    id: u8,
+    next_group_item_index: usize,
+    previous_group_item_index: usize,
+}
+
+pub type GroupInfoContainer = RelocatableVec<GroupInfo>;
+
 /// Trait defining the interface for event state management.
 ///
 /// Event states track which events have been activated and their activation counts.
 pub trait EventState: Sized + Send + Sync + Debug + ZeroCopySend + RelocatableContainer {
+    /// Sets the event groups as defined by `grouped_events`
+    fn set_event_groups(&mut self, grouped_events: &[(GroupId, EventId)]);
+
     /// Returns the maximum number of [`EventId`]s this state can track.
     fn max_event_count(&self) -> u64;
 
@@ -61,7 +93,7 @@ pub trait EventState: Sized + Send + Sync + Debug + ZeroCopySend + RelocatableCo
     ///
     /// Returns [`EventStateActivateError::EventIdOutOfBounds`] if `event_id`
     /// exceeds the maximum event ID for this state.
-    fn activate(&self, event_id: EventId) -> Result<(), EventStateActivateError>;
+    fn activate(&self, event_id: EventId) -> Result<bool, EventStateActivateError>;
 
     /// Drains all active events, invoking `callback` for each activation record.
     ///

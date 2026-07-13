@@ -27,16 +27,19 @@
 //! ```
 use core::fmt::Debug;
 
+use iceoryx2_cal::event::EventId;
 use iceoryx2_log::fail;
 
 use crate::port::{listener::Listener, listener::ListenerCreateError, port_name::PortName};
 use crate::service;
+use iceoryx2_cal::event::event_state::GroupId;
 
 use super::event::PortFactory;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ListenerConfig {
     pub(crate) port_name: PortName,
+    pub(crate) grouped_events: Vec<(GroupId, EventId)>,
 }
 
 /// Factory to create a new [`Listener`] port/endpoint for
@@ -52,10 +55,13 @@ unsafe impl<Service: service::Service> Send for PortFactoryListener<'_, Service>
 
 impl<'factory, Service: service::Service> PortFactoryListener<'factory, Service> {
     pub(crate) fn new(factory: &'factory PortFactory<Service>) -> Self {
+        let grouped_events = Vec::new();
+
         Self {
             factory,
             config: ListenerConfig {
                 port_name: PortName::new_empty(),
+                grouped_events,
             },
         }
     }
@@ -63,6 +69,24 @@ impl<'factory, Service: service::Service> PortFactoryListener<'factory, Service>
     /// Sets the [`PortName`] of the  [`Listener`].
     pub fn name(mut self, name: &PortName) -> Self {
         self.config.port_name = *name;
+        self
+    }
+
+    /// Sets the [`GroupId`] for an [`EventId`]
+    pub fn group_event_id(mut self, group_id: GroupId, event_id: EventId) -> Self {
+        let mut event_id_index = None;
+        for (i, (_, eid)) in self.config.grouped_events.iter().enumerate() {
+            if event_id_index.is_none() && *eid == event_id {
+                event_id_index = Some(i);
+                break;
+            }
+        }
+
+        match event_id_index {
+            Some(index) => self.config.grouped_events[index] = (group_id, event_id),
+            _ => self.config.grouped_events.push((group_id, event_id)),
+        }
+
         self
     }
 

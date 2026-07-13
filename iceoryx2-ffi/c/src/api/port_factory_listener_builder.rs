@@ -36,6 +36,7 @@ pub enum iox2_listener_create_error_e {
     RESOURCE_CREATION_FAILED,
     FAILED_TO_DEPLOY_THREAD_SAFETY_POLICY,
     UNABLE_TO_CREATE_PORT_TAG,
+    EVENT_ID_OUT_OF_BOUNDS,
 }
 
 impl IntoCInt for ListenerCreateError {
@@ -52,6 +53,9 @@ impl IntoCInt for ListenerCreateError {
             }
             ListenerCreateError::UnableToCreatePortTag => {
                 iox2_listener_create_error_e::UNABLE_TO_CREATE_PORT_TAG
+            }
+            ListenerCreateError::EventIdOutOfBounds => {
+                iox2_listener_create_error_e::EVENT_ID_OUT_OF_BOUNDS
             }
         }) as c_int
     }
@@ -80,7 +84,7 @@ impl PortFactoryListenerBuilderUnion {
 #[repr(C)]
 #[repr(align(8))] // alignment of Option<PortFactoryListenerBuilderUnion>
 pub struct iox2_port_factory_listener_builder_storage_t {
-    internal: [u8; 96], // magic number obtained with size_of::<Option<PortFactoryListenerBuilderUnion>>()
+    internal: [u8; 120], // magic number obtained with size_of::<Option<PortFactoryListenerBuilderUnion>>()
 }
 
 #[repr(C)]

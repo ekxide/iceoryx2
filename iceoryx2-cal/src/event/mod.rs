@@ -22,7 +22,7 @@ pub use iceoryx2_bb_system_types::path::Path;
 
 pub use implementations::*;
 
-use crate::event::event_state::{EventActivation, EventState, EventStateActivateError};
+use crate::event::event_state::{EventActivation, EventState, EventStateActivateError, GroupId};
 use core::{fmt::Debug, time::Duration};
 use iceoryx2_bb_derive_macros::ZeroCopySend;
 use iceoryx2_bb_elementary_traits::testing::abandonable::Abandonable;
@@ -150,6 +150,7 @@ pub trait NotifierBuilder<E: EventState, T: Event<E>>: NamedConceptBuilder<T> + 
 
 pub trait ListenerBuilder<E: EventState, T: Event<E>>: NamedConceptBuilder<T> + Debug {
     fn event_id_max(self, id: EventId) -> Self;
+    fn event_groups(self, event_groups: Vec<(GroupId, EventId)>) -> Self;
     fn create(self) -> Result<T::Listener, ListenerCreateError>;
 }
 

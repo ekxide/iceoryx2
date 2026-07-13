@@ -73,12 +73,12 @@ use core::time::Duration;
 use iceoryx2_bb_concurrency::atomic::Ordering;
 use iceoryx2_bb_elementary_traits::testing::abandonable::Abandonable;
 use iceoryx2_bb_lock_free::mpmc::container::ContainerHandle;
-use iceoryx2_bb_lock_free::mpmc::counting_bit_set::RelocatableCountingBitSet;
 use iceoryx2_bb_posix::file_descriptor::{FileDescriptor, FileDescriptorBased};
 use iceoryx2_bb_posix::file_descriptor_set::SynchronousMultiplexing;
 use iceoryx2_cal::arc_sync_policy::ArcSyncPolicy;
 use iceoryx2_cal::dynamic_storage::DynamicStorage;
 use iceoryx2_cal::event::event_state::EventActivation;
+use iceoryx2_cal::event::event_state::counting_bit_set::RelocatableCountingBitSetEventState;
 use iceoryx2_cal::event::{EventId, ListenerBuilder, ListenerWaitError, NamedConceptMgmt};
 use iceoryx2_cal::named_concept::{NamedConceptBuilder, NamedConceptRemoveError};
 use iceoryx2_log::fail;
@@ -99,6 +99,8 @@ pub enum ListenerCreateError {
     FailedToDeployThreadsafetyPolicy,
     /// The tracking port tag, required for cleanup, could not be created.
     UnableToCreatePortTag,
+    /// The maximal supported value for the [`EventId`] is exceeded
+    EventIdOutOfBounds,
 }
 
 impl core::fmt::Display for ListenerCreateError {
@@ -114,7 +116,7 @@ impl core::error::Error for ListenerCreateError {}
 pub struct Listener<Service: service::Service> {
     dynamic_listener_handle: ContainerHandle,
     listener: Service::ArcThreadSafetyPolicy<
-        <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::Listener,
+        <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSetEventState>>::Listener,
     >,
     service_state: SharedServiceState<Service, NoResource>,
     listener_details: &'static ListenerDetails,
@@ -129,21 +131,21 @@ pub struct Listener<Service: service::Service> {
 
 unsafe impl<Service: service::Service> Send for Listener<Service> where
     Service::ArcThreadSafetyPolicy<
-        <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::Listener,
+        <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSetEventState>>::Listener,
     >: Send + Sync
 {
 }
 
 unsafe impl<Service: service::Service> Sync for Listener<Service> where
     Service::ArcThreadSafetyPolicy<
-        <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::Listener,
+        <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSetEventState>>::Listener,
     >: Send + Sync
 {
 }
 
 impl<Service: service::Service> FileDescriptorBased for Listener<Service>
 where
-    <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::Listener:
+    <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSetEventState>>::Listener:
         FileDescriptorBased,
 {
     fn file_descriptor(&self) -> &FileDescriptor {
@@ -155,7 +157,7 @@ where
 }
 
 impl<Service: service::Service> SynchronousMultiplexing for Listener<Service> where
-    <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::Listener:
+    <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSetEventState>>::Listener:
         SynchronousMultiplexing
 {
 }
@@ -184,11 +186,25 @@ impl<Service: service::Service> Drop for Listener<Service> {
 impl<Service: service::Service> Listener<Service> {
     pub(crate) fn new(
         service: SharedServiceState<Service, NoResource>,
-        config: ListenerConfig,
+        mut config: ListenerConfig,
     ) -> Result<Self, ListenerCreateError> {
         let msg = "Failed to create listener";
         let origin = "Listener::new()";
         let listener_id = UniqueListenerId::new();
+        let event_id_max_value = service.static_config().event().event_id_max_value;
+        config
+            .grouped_events
+            .sort_by(|a, b| match a.0.as_value().cmp(&b.0.as_value()) {
+                core::cmp::Ordering::Equal => a.1.as_value().cmp(&b.1.as_value()),
+                ordering => ordering,
+            });
+
+        for (_, event_id) in config.grouped_events.iter() {
+            if event_id.as_value() > event_id_max_value {
+                fail!(from origin, with ListenerCreateError::EventIdOutOfBounds,
+                      "{msg} since the event id '{}' from the grouped events exceeds the max event id of '{event_id_max_value}'", event_id.as_value());
+            }
+        }
 
         // !MUST! be the first thing that is created when a new port is instantiated otherwise the
         // port resources might leak if this process is killed in between.
@@ -208,8 +224,8 @@ impl<Service: service::Service> Listener<Service> {
         let event_config = event_config::<Service>(service.shared_node().config());
 
         let listener = fail!(from origin,
-                             when <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSet>>::ListenerBuilder::new(&event_name).config(&event_config)
-                                .event_id_max(EventId::new(service.static_config().event().event_id_max_value))
+                             when <Service::Event as iceoryx2_cal::event::Event<RelocatableCountingBitSetEventState>>::ListenerBuilder::new(&event_name).config(&event_config)
+                                .event_id_max(EventId::new(event_id_max_value)).event_groups(config.grouped_events)
                                 .create(),
                              with ListenerCreateError::ResourceCreationFailed,
                              "{} since the underlying event concept \"{}\" could not be created.", msg, event_name);
