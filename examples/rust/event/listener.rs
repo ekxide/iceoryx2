@@ -14,6 +14,7 @@ use core::time::Duration;
 
 extern crate alloc;
 use alloc::boxed::Box;
+use core::num::NonZero;
 
 use iceoryx2::prelude::*;
 
@@ -29,11 +30,18 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
         .event()
         .open_or_create()?;
 
-    let listener = event.listener_builder().create()?;
+    let listener = event
+        .listener_builder()
+        .group_event_id(GroupId::new(NonZero::new(1).unwrap()), EventId::new(1))
+        .group_event_id(GroupId::new(NonZero::new(1).unwrap()), EventId::new(3))
+        .group_event_id(GroupId::new(NonZero::new(2).unwrap()), EventId::new(2))
+        .group_event_id(GroupId::new(NonZero::new(2).unwrap()), EventId::new(5))
+        .create()?;
 
     coutln!("Listener ready to receive events!");
 
     while node.wait(Duration::ZERO).is_ok() {
+        coutln!("waiting ...");
         listener.timed_wait(
             |event| {
                 coutln!("event {:?} was notified {} times", event.id, event.count);

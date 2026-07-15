@@ -31,10 +31,10 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
 
     let mut counter: usize = 0;
     while node.wait(CYCLE_TIME).is_ok() {
+        let id = counter % max_event_id.min(10);
         counter += 1;
-        notifier.notify_with_custom_event_id(EventId::new(counter % max_event_id))?;
-
-        coutln!("Trigger event with id {counter} ...");
+        notifier.notify_with_custom_event_id(EventId::new(id))?;
+        coutln!("Trigger event with id {id} ...");
     }
 
     coutln!("exit");
