@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Contributors to the Eclipse Foundation
+// Copyright (c) 2026 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -10,10 +10,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-extern crate bindgen;
+namespace Example;
 
-pub fn configure_cargo() {}
-
-pub fn configure_builder(builder: bindgen::Builder) -> bindgen::Builder {
-    builder
+table Entry {
+    data_1: int32;
+    data_2: uint64;
 }
+
+table UnboundedData {
+    title: string;
+    entries: [Entry];
+}
+
+root_type UnboundedData;

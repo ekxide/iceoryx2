@@ -10,9 +10,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-#ifndef IOX2_DEPLOYMENT_HPP
-#define IOX2_DEPLOYMENT_HPP
+namespace Example;
 
-#define IOX2_FEATURE_FLATBUFFERS @IOX2_FEATURE_FLATBUFFERS_ENABLED@
+table DataProps {
+    received_entries_len: uint64;
+}
 
-#endif // IOX2_DEPLOYMENT_HPP
+root_type DataProps;

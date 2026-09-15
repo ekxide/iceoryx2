@@ -23,6 +23,7 @@
 * [#1707](https://github.com/eclipse-iceoryx/iceoryx2/issues/1707) Expose `CustomHeaderMarker` and `CustomPayloadMarker` in C++ bindings
 * [#1722](https://github.com/eclipse-iceoryx/iceoryx2/issues/1722) Remove allocations in gateway hot path
 * [#1742](https://github.com/eclipse-iceoryx/iceoryx2/issues/1742) Add (work-in-progress) gateway implementation for ROS 2
+* [#1745](https://github.com/eclipse-iceoryx/iceoryx2/issues/1745) Add Flatbuffers support for publish-subscribe and request-response payloads
 * [#1773](https://github.com/eclipse-iceoryx/iceoryx2/issues/1773) Make ports identifiable by name
 * [#1798](https://github.com/eclipse-iceoryx/iceoryx2/issues/1798) Add support for musl 1.2.x
 * [#1813](https://github.com/eclipse-iceoryx/iceoryx2/issues/1813) Add API to deliver events to specific listener only
@@ -60,6 +61,8 @@
 * [#1878](https://github.com/eclipse-iceoryx/iceoryx2/issues/1878) Fix race in `pthread_create` on macOS and Windows
 * [#1893](https://github.com/eclipse-iceoryx/iceoryx2/issues/1893) Fix C language `ipc` and `local` mapping for payload types
 * [#1906](https://github.com/eclipse-iceoryx/iceoryx2/issues/1906) Do not set the exec bit for created resources
+* [#1918](https://github.com/eclipse-iceoryx/iceoryx2/issues/1917) Fix wrong `CLOCK_MONOTONIC` constant on macOS (1 instead of 6) which broke `Time::now_with_clock(ClockType::Monotonic)`
+* [#1924](https://github.com/eclipse-iceoryx/iceoryx2/issues/1924) Ensure discovery service node resources are removed during shutdown.
 
 ### Refactoring
 
@@ -75,6 +78,12 @@
 * [#1845](https://github.com/eclipse-iceoryx/iceoryx2/issues/1845) Reduce imports for usage of the `semantic_string` macro
 * [#1853](https://github.com/eclipse-iceoryx/iceoryx2/issues/1853) Improve error message in static asserts
 * [#1891](https://github.com/eclipse-iceoryx/iceoryx2/issues/1891) Rename the tunnel to gateway and move its crates from `iceoryx2-services/` to a top-level `iceoryx2-gateway/` directory
+* [#1928](https://github.com/eclipse-iceoryx/iceoryx2/issues/1928) Make Windows platform abstraction use the `libc` crate instead of `bindgen`
+* [#1929](https://github.com/eclipse-iceoryx/iceoryx2/issues/1929) Make macOS platform abstraction use the `libc` crate instead of `bindgen`
+* [#1930](https://github.com/eclipse-iceoryx/iceoryx2/issues/1930) Make FreeBSD platform abstraction use the `libc` crate instead of `bindgen`
+* [#1931](https://github.com/eclipse-iceoryx/iceoryx2/issues/1931) Use ANSI escape sequences in iceoryx2-cli
+* [#1942](https://github.com/eclipse-iceoryx/iceoryx2/issues/1942) Split implementation of gateway testing backend into modules
+* [#1949](https://github.com/eclipse-iceoryx/iceoryx2/issues/1949) Take `&mut self` in gateway Discovery trait
 
 ### Workflow
 
@@ -90,6 +99,7 @@
 * [#1815](https://github.com/eclipse-iceoryx/iceoryx2/issues/1815) Set Rust minimum required version (MSRV) to version 1.89.0
 * [#1884](https://github.com/eclipse-iceoryx/iceoryx2/issues/1884) Bump `googletest` to 1.16.0
 * [#1885](https://github.com/eclipse-iceoryx/iceoryx2/issues/1885) Bump bazel modules `bazel_features` to 1.32.0, `bazel_skylib` to 1.9.2, `platforms` to 1.1.0, `rules_cc` to 0.2.17, `rules_rust`/`rules_rust_bindgen` to 0.73.0 and `toolchains_llvm` to 1.8.0 with `llvm_version` 21.1.6
+* [#1942](https://github.com/eclipse-iceoryx/iceoryx2/issues/1942) Reduce exeuction time of gateway backend tests
 
 ### New API features
 
