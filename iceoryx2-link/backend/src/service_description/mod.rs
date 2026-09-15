@@ -127,10 +127,10 @@ impl core::fmt::Display for UnsupportedPattern {
 
 impl core::error::Error for UnsupportedPattern {}
 
-impl TryFrom<&StaticConfig> for ServiceDescription {
+impl<S: Service> TryFrom<&StaticConfig<S>> for ServiceDescription {
     type Error = UnsupportedPattern;
 
-    fn try_from(static_config: &StaticConfig) -> Result<Self, Self::Error> {
+    fn try_from(static_config: &StaticConfig<S>) -> Result<Self, Self::Error> {
         let (pattern, types) = match static_config.messaging_pattern() {
             StaticPattern::PublishSubscribe(config) => {
                 let types = config.message_type_details();
@@ -192,7 +192,7 @@ mod tests {
         name: &ServiceName,
         config: &Config,
         pattern: Pattern,
-    ) -> StaticConfig {
+    ) -> StaticConfig<local::Service> {
         local::Service::details(name, config, pattern)
             .expect("details are readable")
             .expect("service exists")
