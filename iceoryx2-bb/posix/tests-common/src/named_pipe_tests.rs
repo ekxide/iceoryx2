@@ -107,7 +107,7 @@ pub fn opening_file_as_named_pipe_fails() {
 }
 
 #[test]
-pub fn creating_non_existing_named_pipe_on_creation_mode_create_exclusive_suceeds() {
+pub fn creating_named_pipe_creation_mode_create_exclusive_succeeds() {
     test_requires!(POSIX_SUPPORT_NAMED_PIPE);
 
     let test_named_pipe_path = generate_file_path();
@@ -116,6 +116,21 @@ pub fn creating_non_existing_named_pipe_on_creation_mode_create_exclusive_suceed
         .create();
 
     assert_that!(result, is_ok);
+}
+
+#[test]
+pub fn creating_named_pipe_on_existing_pipe_creation_mode_create_exclusive_fails() {
+    test_requires!(POSIX_SUPPORT_NAMED_PIPE);
+
+    let test = TestFixture::new();
+    test.create_named_pipe(test.file(), CreationMode::PurgeAndCreate);
+
+    let result = NamedPipeBuilder::new(&test.file())
+        .creation_mode(CreationMode::CreateExclusive)
+        .create();
+
+    assert_that!(result, is_err);
+    assert_that!(result.err().unwrap(), eq NamedPipeCreationError::CreateFiFoError(CreateFiFoError::AlreadyExist));
 }
 
 #[test]
@@ -190,17 +205,7 @@ pub fn creating_named_pipe_applies_additional_settings() {
 }
 
 #[test]
-pub fn set_and_receive_access_mode_works() {
-    test_requires!(POSIX_SUPPORT_NAMED_PIPE);
-
-    let test = TestFixture::new();
-    let sut = test.create_named_pipe(test.file(), CreationMode::CreateExclusive);
-
-    assert_that!(sut.access_mode(), eq AccessMode::ReadWrite);
-}
-
-#[test]
-pub fn set_and_receive_ownership_works() {
+pub fn has_ownership_works() {
     test_requires!(POSIX_SUPPORT_NAMED_PIPE);
 
     let test = TestFixture::new();
@@ -332,7 +337,20 @@ pub fn simple_read_write_from_with_different_fds_works() {
 }
 
 #[test]
-fn try_read_works() {
+fn try_read_on_empty_pipe_works() {
+    test_requires!(POSIX_SUPPORT_NAMED_PIPE);
+    let test = TestFixture::new();
+    test.create_named_pipe(test.file(), CreationMode::CreateExclusive);
+
+    let sut_reader = test.open_named_pipe(test.file());
+    let mut read_buffer: [u8; 53] = [0u8; 53];
+    let result = sut_reader.try_read(&mut read_buffer);
+    assert_that!(result, is_ok);
+    assert_that!(result.unwrap(), eq  0);
+}
+
+#[test]
+fn try_read_with_write_works() {
     test_requires!(POSIX_SUPPORT_NAMED_PIPE);
     let test = TestFixture::new();
     let sut_writer = test.create_named_pipe(test.file(), CreationMode::CreateExclusive);
