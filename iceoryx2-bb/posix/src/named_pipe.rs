@@ -186,6 +186,7 @@ enum_gen! {
 }
 
 const NAMED_PIPE_ACCESS_MODE: AccessMode = AccessMode::ReadWrite;
+const BLOCKING_TIMEOUT: Duration = Duration::from_secs(i16::MAX as _);
 
 /// Opens or creates a new [`NamedPipe`]. When calling [`NamedPipeBuilder::creation_mode`] the
 /// [`NamedPipeCreationBuilder`] is returned which provides additional settings only available
@@ -682,7 +683,7 @@ impl NamedPipe {
         let msg = "Unable to blocking receive message";
         fail!(from self, when self.set_non_blocking(false),
                 "{} since the named pipe could not bet set into blocking state.", msg);
-        self.read(buf)
+        self.timed_read(buf, BLOCKING_TIMEOUT)
     }
 
     /// Blocks until either a message was received or the timeout has passed. If no

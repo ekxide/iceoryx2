@@ -379,6 +379,7 @@ fn blocking_read_blocks() {
     let handle = BarrierHandle::new();
     let barrier = BarrierBuilder::new(2).create(&handle).unwrap();
     let send_data: Vec<u8> = vec![1u8, 3u8, 3u8, 7u8, 13u8, 37u8];
+    let mut receive_data: Vec<u8> = vec![0, 0, 0, 0, 0, 0];
 
     thread_scope(|s| {
         s.thread_builder()
@@ -390,19 +391,18 @@ fn blocking_read_blocks() {
                     .unwrap();
                 barrier.wait();
 
-                let mut receive_data: Vec<u8> = vec![0, 0, 0, 0, 0, 0];
                 let result = sut_reader.blocking_read(receive_data.as_mut_slice());
+                received_message.store(true, Ordering::Relaxed);
                 assert_that!(result, is_ok);
                 assert_that!(result.unwrap(), eq send_data.len() as _);
-                received_message.store(true, Ordering::Relaxed);
             })
             .expect("failed to spawn thread");
 
-        barrier.wait();
         let sut_writer = NamedPipeBuilder::new(&pipe_test_path)
             .creation_mode(CreationMode::OpenOrCreate)
             .create()
             .unwrap();
+        barrier.wait();
 
         nanosleep(TIMEOUT).unwrap();
         let received_message_old = received_message.load(Ordering::Relaxed);
@@ -415,6 +415,7 @@ fn blocking_read_blocks() {
     .expect("failed to spawn thread");
 
     assert_that!(received_message.load(Ordering::Relaxed), eq true);
+    assert_that!(receive_data, eq send_data);
 }
 
 #[test]
@@ -427,6 +428,7 @@ fn timed_read_blocks() {
     let handle = BarrierHandle::new();
     let barrier = BarrierBuilder::new(2).create(&handle).unwrap();
     let send_data: Vec<u8> = vec![1u8, 3u8, 3u8, 7u8, 13u8, 37u8];
+    let mut receive_data: Vec<u8> = vec![0, 0, 0, 0, 0, 0];
 
     thread_scope(|s| {
         s.thread_builder()
@@ -437,7 +439,6 @@ fn timed_read_blocks() {
                     .unwrap();
                 barrier.wait();
 
-                let mut receive_data: Vec<u8> = vec![0, 0, 0, 0, 0, 0];
                 let result = sut_reader.timed_read(receive_data.as_mut_slice(), TIMEOUT * 3);
                 assert_that!(result, is_ok);
                 assert_that!(result.unwrap(), eq send_data.len() as _);
@@ -445,11 +446,11 @@ fn timed_read_blocks() {
             })
             .expect("failed to spawn thread");
 
-        barrier.wait();
         let sut_writer = NamedPipeBuilder::new(&pipe_test_path)
             .creation_mode(CreationMode::OpenOrCreate)
             .create()
             .unwrap();
+        barrier.wait();
 
         nanosleep(TIMEOUT).unwrap();
         let received_message_old = received_message.load(Ordering::Relaxed);
@@ -462,11 +463,13 @@ fn timed_read_blocks() {
     .expect("failed to spawn thread");
 
     assert_that!(received_message.load(Ordering::Relaxed), eq true);
+    assert_that!(receive_data, eq send_data);
 }
 
 #[test]
 fn timed_read_blocks_at_least_for_timeout() {
     test_requires!(POSIX_SUPPORT_NAMED_PIPE);
+    let _watchdog = Watchdog::new();
     let pipe_test_path = generate_file_path();
 
     let _sut_writer = NamedPipeBuilder::new(&pipe_test_path)
