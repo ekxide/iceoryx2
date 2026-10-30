@@ -13,10 +13,9 @@
 use alloc::sync::Arc;
 use core::time::Duration;
 
-use iceoryx2_bb_concurrency::atomic::AtomicU64;
-use iceoryx2_bb_concurrency::atomic::Ordering;
-use iceoryx2_bb_posix::barrier::BarrierBuilder;
-use iceoryx2_bb_posix::barrier::BarrierHandle;
+use iceoryx2_bb_concurrency::atomic::{AtomicBool, AtomicU64, Ordering};
+use iceoryx2_bb_posix::barrier::{BarrierBuilder, BarrierHandle};
+use iceoryx2_bb_posix::clock::nanosleep;
 use iceoryx2_bb_posix::file::AccessMode;
 use iceoryx2_bb_posix::ipc_capable::Handle;
 use iceoryx2_bb_posix::mutex::{Mutex, MutexBuilder, MutexHandle};
@@ -29,15 +28,13 @@ use iceoryx2_bb_testing::watchdog::Watchdog;
 use iceoryx2_bb_testing_macros::test;
 use iceoryx2_cal::clock::simulation_clock::*;
 use iceoryx2_cal::clock::*;
-use iceoryx2_cal::dynamic_storage::DynamicStorage;
-use iceoryx2_cal::dynamic_storage::DynamicStorageBuilder;
 use iceoryx2_cal::dynamic_storage::posix_shared_memory::Storage;
+use iceoryx2_cal::dynamic_storage::{DynamicStorage, DynamicStorageBuilder};
 use iceoryx2_cal::event::{
     Event, ListenerBuilder, ListenerWaitInterface, UnixDatagramShmCountingBitSet,
 };
 use iceoryx2_cal::named_concept::*;
-use iceoryx2_cal::reactor::Reactor;
-use iceoryx2_cal::reactor::ReactorBuilder;
+use iceoryx2_cal::reactor::{Reactor, ReactorBuilder};
 use iceoryx2_cal::testing::*;
 
 struct TestFixture {
@@ -741,4 +738,268 @@ fn concurrent_time_controller_opening_succeeds_once() {
 
     assert_that!(success_counter.load(Ordering::Relaxed), eq 1);
     assert_that!(time_controller_storage.lock().unwrap(), is_some);
+}
+
+#[test]
+fn open_clock_concurrently_works() {
+    let test = TestFixture::new();
+    let name = test.name();
+    let config = test.config();
+    let _watchdog = Watchdog::new();
+    let number_of_threads = (SystemInfo::NumberOfCpuCores.value()).clamp(2, 16);
+    const NUMBER_OF_ITERATIONS: usize = 25;
+    let barrier_handle = BarrierHandle::new();
+    let barrier = BarrierBuilder::new(number_of_threads as u32)
+        .create(&barrier_handle)
+        .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        .config(config)
+        .open_clock();
+    assert_that!(clock, is_ok);
+
+    thread_scope(|s| {
+        for _ in 0..number_of_threads {
+            s.thread_builder().spawn(|| {
+                barrier.wait();
+                for _ in 0..NUMBER_OF_ITERATIONS {
+                    assert_that!(
+                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+                            .config(config)
+                            .open_clock(),
+                        is_ok
+                    );
+                }
+            })?;
+        }
+        Ok(())
+    })
+    .unwrap();
+}
+
+#[test]
+fn now_returns_correct_timepoint_when_time_is_advanced_concurrently() {
+    let test = TestFixture::new();
+    let name = test.name();
+    let config = test.config();
+    let _watchdog = Watchdog::new();
+    const NUMBER_OF_ITERATIONS: usize = 250;
+    let barrier_handle = BarrierHandle::new();
+    let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
+    const DURATION: Duration = Duration::from_millis(100);
+
+    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        .config(config)
+        .create_time_controller()
+        .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        .config(config)
+        .open_clock()
+        .unwrap();
+
+    let keep_running = AtomicBool::new(true);
+
+    thread_scope(|s| {
+        s.thread_builder().spawn(|| {
+            barrier.wait();
+            while keep_running.load(Ordering::Relaxed) {
+                time_controller
+                    .advance(DURATION)
+                    .expect("advance time succeeds");
+            }
+        })?;
+        s.thread_builder().spawn(|| {
+            let mut old_time = TimePoint::new();
+            barrier.wait();
+            for _ in 0..NUMBER_OF_ITERATIONS {
+                let current_time = clock.now().unwrap();
+                let diff = (current_time - old_time).as_millis() as u128;
+                if diff > 0 {
+                    assert_that!(diff % DURATION.as_millis(), eq 0);
+                    old_time = current_time;
+                }
+            }
+            keep_running.store(false, Ordering::Relaxed);
+        })?;
+        Ok(())
+    })
+    .unwrap();
+}
+
+// TODO: check why listener creation fails sometimes
+#[test]
+fn schedule_on_succeeds_when_time_is_advanced_concurrently() {
+    let test = TestFixture::new();
+    let name = test.name();
+    let config = test.config();
+    let _watchdog = Watchdog::new();
+    const NUMBER_OF_ITERATIONS: u128 = 10;
+    let barrier_handle = BarrierHandle::new();
+    let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
+    const DURATION: Duration = Duration::from_millis(100);
+
+    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        .config(config)
+        .create_time_controller()
+        .unwrap();
+    let clock = Arc::new(
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+            .config(config)
+            .open_clock()
+            .unwrap(),
+    );
+
+    let keep_running = AtomicBool::new(true);
+    let listener_name = unsafe { FileName::new_unchecked_const(b"Picard") };
+    let listener = <UnixDatagramShmCountingBitSet as Event>::ListenerBuilder::new(&listener_name)
+        .create(clock.clone())
+        .unwrap();
+
+    thread_scope(|s| {
+        s.thread_builder().spawn(|| {
+            barrier.wait();
+            while keep_running.load(Ordering::Relaxed) {
+                time_controller
+                    .advance(DURATION)
+                    .expect("advance time succeeds");
+            }
+        })?;
+
+        s.thread_builder().spawn(|| {
+            barrier.wait();
+            for i in 0..NUMBER_OF_ITERATIONS {
+                let timeout =
+                    Timeout::At(TimePoint::from_millis((i + 1) * 4 * DURATION.as_millis()));
+                let handle = clock.schedule_on(timeout, &listener_name);
+                assert_that!(handle, is_ok);
+                match handle.unwrap() {
+                    ScheduleOnHandle::Guard(_g) => {
+                        // We need to blocking_wait here because the guard _g may be dropped before the
+                        // listener is notified by advance().
+                        assert_that!(listener.blocking_wait(&mut |_| {}).unwrap(), eq 1);
+                    }
+                    ScheduleOnHandle::TranslatedTimeout(_) => {
+                        assert_that!(listener.try_wait(&mut |_| {}).unwrap(), eq 1);
+                    }
+                }
+            }
+            keep_running.store(false, Ordering::Relaxed);
+        })?;
+        Ok(())
+    })
+    .unwrap();
+}
+
+#[test]
+fn schedule_succeeds_when_time_is_advanced_concurrently() {
+    let test = TestFixture::new();
+    let name = test.name();
+    let config = test.config();
+    let _watchdog = Watchdog::new();
+    const NUMBER_OF_ITERATIONS: u128 = 10;
+    let barrier_handle = BarrierHandle::new();
+    let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
+    const DURATION: Duration = Duration::from_millis(100);
+
+    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        .config(config)
+        .create_time_controller()
+        .unwrap();
+    let clock = Arc::new(
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+            .config(config)
+            .open_clock()
+            .unwrap(),
+    );
+
+    let keep_running = AtomicBool::new(true);
+
+    thread_scope(|s| {
+        s.thread_builder().spawn(|| {
+            barrier.wait();
+            while keep_running.load(Ordering::Relaxed) {
+                time_controller
+                    .advance(DURATION)
+                    .expect("advance time succeeds");
+                nanosleep(DURATION / 10).unwrap();
+            }
+        })?;
+
+        s.thread_builder().spawn(|| {
+            let reactor = iceoryx2_cal::reactor::posix_select::ReactorBuilder::new()
+                .create(clock.clone())
+                .unwrap();
+            barrier.wait();
+            for i in 0..NUMBER_OF_ITERATIONS {
+                let timeout =
+                    Timeout::At(TimePoint::from_millis((i + 1) * 10 * DURATION.as_millis()));
+                let handle = clock.schedule(timeout);
+                assert_that!(handle, is_ok);
+                match handle.unwrap() {
+                    ScheduleHandle::GuardAndListener((_g, l)) => {
+                        let _reactor_guard = reactor.attach(&*l);
+                        assert_that!(reactor.blocking_wait(|_| {}).unwrap(), eq 1);
+                    }
+                    ScheduleHandle::TranslatedTimeout(_) => {}
+                }
+            }
+            keep_running.store(false, Ordering::Relaxed);
+        })?;
+        Ok(())
+    })
+    .unwrap();
+}
+
+#[test]
+fn blocking_sleep_is_unblocked_when_time_is_advanced_concurrently() {
+    let test = TestFixture::new();
+    let name = test.name();
+    let config = test.config();
+    let _watchdog = Watchdog::new();
+    let number_of_threads = (SystemInfo::NumberOfCpuCores.value()).clamp(2, 16);
+    let barrier_handle = BarrierHandle::new();
+    let barrier = BarrierBuilder::new(1 + number_of_threads as u32)
+        .create(&barrier_handle)
+        .unwrap();
+    const DURATION: Duration = Duration::from_millis(100);
+
+    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        .config(config)
+        .create_time_controller()
+        .unwrap();
+    let clock = Arc::new(
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+            .config(config)
+            .open_clock()
+            .unwrap(),
+    );
+
+    let keep_running = AtomicBool::new(true);
+    let finished_threads = AtomicU64::new(0);
+    let timeout = Timeout::At(TimePoint::from_millis(DURATION.as_millis() * 10));
+
+    thread_scope(|s| {
+        s.thread_builder().spawn(|| {
+            barrier.wait();
+            while finished_threads.load(Ordering::Relaxed) != number_of_threads as u64 - 1 {
+                time_controller
+                    .advance(DURATION)
+                    .expect("advance time succeeds");
+                nanosleep(DURATION / 10).unwrap();
+            }
+        })?;
+
+        for _ in 0..number_of_threads {
+            s.thread_builder().spawn(|| {
+                barrier.wait();
+                // TODO: check why this sometimes fails
+                assert_that!(clock.blocking_sleep(timeout), is_ok);
+                finished_threads.fetch_add(1, Ordering::Relaxed);
+            })?;
+            keep_running.store(false, Ordering::Relaxed);
+        }
+        Ok(())
+    })
+    .unwrap();
+
+    assert_that!(true, eq false);
 }
