@@ -13,6 +13,7 @@
 use core::fmt::Debug;
 use iceoryx2_bb_elementary_traits::testing::abandonable::Abandonable;
 use iceoryx2_bb_elementary_traits::zero_copy_send::ZeroCopySend;
+use iceoryx2_cal::clock::simulation_clock::SimulationClockState;
 use iceoryx2_cal::shm_allocator::bump_allocator::BumpAllocator;
 use iceoryx2_cal::shm_allocator::pool_allocator::PoolAllocator;
 use iceoryx2_cal::*;
@@ -45,7 +46,10 @@ impl crate::service::Service for Service {
     type BlackboardPayload = shared_memory::recommended::Ipc<BumpAllocator>;
     type UniqueId = crate::unique_id_generator::unique_system_id::UniqueSystemIdGenerator<Service>;
     type NameGenerator = crate::name_generator::default_name_generator::DefaultNameGenerator;
-    type Clock = clock::simulation_clock::SimulationClock<Self::Event>;
+    type Clock = clock::simulation_clock::SimulationClock<
+        Self::Event,
+        dynamic_storage::recommended::Ipc<SimulationClockState>,
+    >;
 }
 
 impl crate::service::internal::ServiceInternal<Service> for Service {}

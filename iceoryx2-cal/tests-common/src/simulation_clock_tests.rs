@@ -28,7 +28,6 @@ use iceoryx2_bb_testing::watchdog::Watchdog;
 use iceoryx2_bb_testing_macros::test;
 use iceoryx2_cal::clock::simulation_clock::*;
 use iceoryx2_cal::clock::*;
-use iceoryx2_cal::dynamic_storage::posix_shared_memory::Storage;
 use iceoryx2_cal::dynamic_storage::{DynamicStorage, DynamicStorageBuilder};
 use iceoryx2_cal::event::{
     Event, ListenerBuilder, ListenerWaitInterface, UnixDatagramShmCountingBitSet,
@@ -37,16 +36,18 @@ use iceoryx2_cal::named_concept::*;
 use iceoryx2_cal::reactor::{Reactor, ReactorBuilder};
 use iceoryx2_cal::testing::*;
 
+// TODO: test for other storage types?
+type Storage = iceoryx2_cal::dynamic_storage::posix_shared_memory::Storage<SimulationClockState>;
+
 struct TestFixture {
     name: FileName,
-    config: TimeControllerConfig,
+    config: TimeControllerConfig<Storage>,
 }
 
 impl TestFixture {
     fn new() -> Self {
-        let storage_config = generate_isolated_config::<
-            <Storage<SimulationClockState> as NamedConceptMgmt>::Configuration,
-        >();
+        let storage_config =
+            generate_isolated_config::<<Storage as NamedConceptMgmt>::Configuration>();
         Self {
             name: generate_file_path().file_name(),
             config: TimeControllerConfig::default()
@@ -59,7 +60,7 @@ impl TestFixture {
         &self.name
     }
 
-    fn config(&self) -> &TimeControllerConfig {
+    fn config(&self) -> &TimeControllerConfig<Storage> {
         &self.config
     }
 }
@@ -71,20 +72,17 @@ impl Drop for TestFixture {
     }
 }
 
-fn create_time_controller_config() -> TimeControllerConfig {
-    let storage_config = generate_isolated_config::<
-        <Storage<SimulationClockState> as NamedConceptMgmt>::Configuration,
-    >();
+fn create_time_controller_config() -> TimeControllerConfig<Storage> {
+    let storage_config = generate_isolated_config::<<Storage as NamedConceptMgmt>::Configuration>();
     TimeControllerConfig::default()
         .storage_config(storage_config)
         .capacity(10)
 }
 
-fn cleanup_clock_state(name: &FileName, config: &TimeControllerConfig) {
-    if let Ok(s) =
-        <Storage<SimulationClockState> as DynamicStorage<SimulationClockState>>::Builder::new(name)
-            .config(config.get_storage_config())
-            .open(AccessMode::ReadWrite)
+fn cleanup_clock_state(name: &FileName, config: &TimeControllerConfig<Storage>) {
+    if let Ok(s) = <Storage as DynamicStorage<SimulationClockState>>::Builder::new(name)
+        .config(config.get_storage_config())
+        .open(AccessMode::ReadWrite)
     {
         s.acquire_ownership();
     }
@@ -93,12 +91,12 @@ fn cleanup_clock_state(name: &FileName, config: &TimeControllerConfig) {
 #[test]
 fn time_controller_can_be_created_once() {
     let test = TestFixture::new();
-    let sut1 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut1 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .create_time_controller();
     assert_that!(sut1, is_ok);
 
-    let sut2 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut2 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .create_time_controller();
     assert_that!(sut2, is_err);
@@ -109,7 +107,7 @@ fn time_controller_can_be_created_once() {
 fn open_time_controller_fails_when_not_created_before() {
     let name = generate_file_path().file_name();
     let config = create_time_controller_config();
-    let sut = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(&name)
+    let sut = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(&name)
         .config(&config)
         .open_time_controller();
     assert_that!(sut, is_err);
@@ -119,26 +117,27 @@ fn open_time_controller_fails_when_not_created_before() {
 #[test]
 fn time_controller_can_be_opened_once() {
     let test = TestFixture::new();
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
 
     // add additional clock that opens the clock internals so that OSes like windows, that remove
     // all shm's when no process is using them, also pass the test
-    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_clock()
         .unwrap();
 
     drop(time_controller);
 
-    let sut1 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut1 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_time_controller();
     assert_that!(sut1, is_ok);
 
-    let sut2 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut2 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_time_controller();
     assert_that!(sut2, is_err);
@@ -148,12 +147,12 @@ fn time_controller_can_be_opened_once() {
 #[test]
 fn open_or_create_time_controller_works_when_not_created_before() {
     let test = TestFixture::new();
-    let sut1 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut1 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_or_create_time_controller();
     assert_that!(sut1, is_ok);
 
-    let sut2 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut2 = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_or_create_time_controller();
     assert_that!(sut2, is_err);
@@ -163,13 +162,14 @@ fn open_or_create_time_controller_works_when_not_created_before() {
 #[test]
 fn open_or_create_time_controller_works_when_time_controller_was_dropped() {
     let test = TestFixture::new();
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     drop(time_controller);
 
-    let sut = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let sut = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_or_create_time_controller();
     assert_that!(sut, is_ok);
@@ -180,10 +180,11 @@ fn advance_returns_old_timepoint() {
     let test = TestFixture::new();
     let duration = Duration::from_nanos(14873);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
 
     let tp0 = time_controller.advance(duration).unwrap();
     assert_that!(tp0, eq TimePoint::new());
@@ -197,13 +198,13 @@ fn advance_returns_old_timepoint() {
 fn open_clock_succeeds_when_time_controller_was_created_before() {
     let test = TestFixture::new();
     let _time_controller =
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .create_time_controller()
             .unwrap();
 
     assert_that!(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock(),
         is_ok
@@ -215,7 +216,7 @@ fn open_clock_succeeds_without_time_controller() {
     let test = TestFixture::new();
 
     assert_that!(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock(),
         is_ok
@@ -226,13 +227,13 @@ fn open_clock_succeeds_without_time_controller() {
 fn open_two_clocks_works() {
     let test = TestFixture::new();
 
-    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_clock()
         .unwrap();
 
     assert_that!(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock(),
         is_ok
@@ -243,25 +244,25 @@ fn open_two_clocks_works() {
 fn time_controller_can_be_created_after_clock() {
     let test = TestFixture::new();
 
-    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_clock()
         .unwrap();
 
     assert_that!(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .create_time_controller(),
         is_ok
     );
     assert_that!(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_or_create_time_controller(),
         is_ok
     );
     assert_that!(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_time_controller(),
         is_ok
@@ -273,11 +274,12 @@ fn now_returns_current_time() {
     let test = TestFixture::new();
     let duration = Duration::from_nanos(452381790);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
-    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_clock()
         .unwrap();
@@ -302,11 +304,12 @@ fn now_returns_current_time_with_configured_creation_time() {
     let config = create_time_controller_config().creation_time(tp);
     let duration = Duration::from_nanos(452381790);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(&name)
-        .config(&config)
-        .create_time_controller()
-        .unwrap();
-    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(&name)
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(&name)
+            .config(&config)
+            .create_time_controller()
+            .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(&name)
         .config(&config)
         .open_clock()
         .unwrap();
@@ -331,12 +334,13 @@ fn schedule_on_notifies_listener_when_timeout_has_already_expired() {
     let test = TestFixture::new();
     let duration = Duration::from_nanos(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -367,7 +371,7 @@ fn schedule_on_returns_guard_when_timeout_has_not_expired() {
     let test = TestFixture::new();
 
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -388,12 +392,13 @@ fn advance_notifies_when_timeout_was_scheduled_with_schedule_on() {
     let test = TestFixture::new();
     let duration = Duration::from_nanos(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -419,12 +424,13 @@ fn guard_deregisters_timeout() {
     let test = TestFixture::new();
     let duration = Duration::from_nanos(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -456,12 +462,13 @@ fn schedule_returns_zero_timeout_when_passed_timeout_has_already_expired() {
     let duration = Duration::from_nanos(100);
     let timeout = Timeout::At(TimePoint::from_nanos(50));
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -484,7 +491,7 @@ fn schedule_returns_guard_and_listener_when_timeout_has_not_expired() {
     let test = TestFixture::new();
 
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -505,12 +512,13 @@ fn advance_notifies_when_timeout_was_scheduled_with_schedule() {
     let duration = Duration::from_nanos(100);
     let timeout = Timeout::By(duration);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -543,12 +551,13 @@ fn guard_deregisters_timeout_that_was_registered_with_schedule() {
     let duration = Duration::from_nanos(100);
     let timeout = Timeout::By(duration);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
             .config(test.config())
             .open_clock()
             .unwrap(),
@@ -579,11 +588,12 @@ fn blocking_sleep_does_not_block_when_timeout_expired() {
     let duration = Duration::from_millis(1);
     let timeout = Timeout::At(TimePoint::from_nanos(100));
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
-    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_clock()
         .unwrap();
@@ -600,11 +610,12 @@ fn blocking_sleep_blocks_until_timeout_has_expired() {
     let duration = Duration::from_millis(12);
     let timeout = Timeout::At(TimePoint::from_millis(12));
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
-        .config(test.config())
-        .create_time_controller()
-        .unwrap();
-    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(test.name())
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
+            .config(test.config())
+            .create_time_controller()
+            .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(test.name())
         .config(test.config())
         .open_clock()
         .unwrap();
@@ -641,12 +652,12 @@ fn concurrent_time_controller_creation_succeeds_once() {
     );
     let mutex_handle = MutexHandle::new();
     let time_controller_storage: Arc<
-        Mutex<Option<SimulationTimeController<UnixDatagramShmCountingBitSet>>>,
+        Mutex<Option<SimulationTimeController<UnixDatagramShmCountingBitSet, Storage>>>,
     > = Arc::new(
         MutexBuilder::new()
             .create(
                 Some(
-                    SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+                    SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
                         .config(config)
                         .create_time_controller()
                         .unwrap(),
@@ -657,7 +668,7 @@ fn concurrent_time_controller_creation_succeeds_once() {
     );
     let success_counter = Arc::new(AtomicU64::new(0));
 
-    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
         .config(config)
         .open_clock()
         .unwrap();
@@ -674,7 +685,7 @@ fn concurrent_time_controller_creation_succeeds_once() {
                 b.wait();
                 for _ in 0..NUMBER_OF_ITERATIONS {
                     if let Ok(time_controller) =
-                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
                             .config(config)
                             .create_time_controller()
                     {
@@ -693,7 +704,7 @@ fn concurrent_time_controller_creation_succeeds_once() {
                 b.wait();
                 for _ in 0..NUMBER_OF_ITERATIONS {
                     if let Ok(time_controller) =
-                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
                             .config(config)
                             .open_or_create_time_controller()
                     {
@@ -726,15 +737,16 @@ fn concurrent_time_controller_opening_succeeds_once() {
         .unwrap();
     let mutex_handle = MutexHandle::new();
     let time_controller_storage: Arc<
-        Mutex<Option<SimulationTimeController<UnixDatagramShmCountingBitSet>>>,
+        Mutex<Option<SimulationTimeController<UnixDatagramShmCountingBitSet, Storage>>>,
     > = Arc::new(MutexBuilder::new().create(None, &mutex_handle).unwrap());
     let success_counter = AtomicU64::new(0);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
-    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
+    let _clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
         .config(config)
         .open_clock()
         .unwrap();
@@ -747,7 +759,7 @@ fn concurrent_time_controller_opening_succeeds_once() {
                 for _ in 0..NUMBER_OF_ITERATIONS {
                     let storage = time_controller_storage.clone();
                     if let Ok(time_controller) =
-                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
                             .config(config)
                             .open_time_controller()
                     {
@@ -778,7 +790,7 @@ fn open_clock_concurrently_works() {
     let barrier = BarrierBuilder::new(number_of_threads as u32)
         .create(&barrier_handle)
         .unwrap();
-    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
         .config(config)
         .open_clock();
     assert_that!(clock, is_ok);
@@ -789,7 +801,7 @@ fn open_clock_concurrently_works() {
                 barrier.wait();
                 for _ in 0..NUMBER_OF_ITERATIONS {
                     assert_that!(
-                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+                        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
                             .config(config)
                             .open_clock(),
                         is_ok
@@ -813,11 +825,12 @@ fn now_returns_correct_timepoint_when_time_is_advanced_concurrently() {
     let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
     const DURATION: Duration = Duration::from_millis(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
-    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
+    let clock = SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
         .config(config)
         .open_clock()
         .unwrap();
@@ -862,12 +875,13 @@ fn schedule_on_succeeds_when_time_is_advanced_concurrently() {
     let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
     const DURATION: Duration = Duration::from_millis(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
             .config(config)
             .open_clock()
             .unwrap(),
@@ -926,12 +940,13 @@ fn schedule_succeeds_when_time_is_advanced_concurrently() {
     let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
     const DURATION: Duration = Duration::from_millis(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
             .config(config)
             .open_clock()
             .unwrap(),
@@ -989,12 +1004,13 @@ fn blocking_sleep_is_unblocked_when_time_is_advanced_concurrently() {
         .unwrap();
     const DURATION: Duration = Duration::from_millis(100);
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
             .config(config)
             .open_clock()
             .unwrap(),
@@ -1039,12 +1055,13 @@ fn schedule_different_timeouts_concurrently_works() {
     let barrier_handle = BarrierHandle::new();
     let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
             .config(config)
             .open_clock()
             .unwrap(),
@@ -1093,12 +1110,13 @@ fn schedule_same_timeouts_concurrently_works() {
     let barrier_handle = BarrierHandle::new();
     let barrier = BarrierBuilder::new(2).create(&barrier_handle).unwrap();
 
-    let time_controller = SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
-        .config(config)
-        .create_time_controller()
-        .unwrap();
+    let time_controller =
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
+            .config(config)
+            .create_time_controller()
+            .unwrap();
     let clock = Arc::new(
-        SimulationClockBuilder::<UnixDatagramShmCountingBitSet>::new(name)
+        SimulationClockBuilder::<UnixDatagramShmCountingBitSet, Storage>::new(name)
             .config(config)
             .open_clock()
             .unwrap(),

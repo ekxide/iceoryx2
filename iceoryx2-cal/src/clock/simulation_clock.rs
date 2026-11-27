@@ -20,10 +20,7 @@ use crate::{
         TimeControllerBuilderOpenOrCreateError, Timeout,
         internal::{create_notifier, create_reactor_attachment, create_waiter},
     },
-    dynamic_storage::{
-        DynamicStorage, DynamicStorageBuilder, DynamicStorageOpenError,
-        posix_shared_memory::Storage,
-    },
+    dynamic_storage::{DynamicStorage, DynamicStorageBuilder, DynamicStorageOpenError},
     event::{Event, EventId, Notifier, UnixDatagramShmCountingBitSet},
     named_concept::{NamedConceptBuilder, NamedConceptConfiguration, NamedConceptMgmt},
 };
@@ -80,20 +77,29 @@ impl<'a> Drop for Guard<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
-// TODO iox2-2100: generic parameter for storage
-pub struct TimeControllerConfig {
-    storage_config: <Storage<SimulationClockState> as NamedConceptMgmt>::Configuration,
+// TODO: make SimulationClockState fixed (SimulationClockStateFamily)
+#[derive(Debug)]
+pub struct TimeControllerConfig<Storage: DynamicStorage<SimulationClockState>> {
+    storage_config: <Storage as NamedConceptMgmt>::Configuration,
     capacity: usize,
     creation_time: TimePoint,
 }
 
-impl Default for TimeControllerConfig {
+impl<Storage: DynamicStorage<SimulationClockState>> Clone for TimeControllerConfig<Storage> {
+    fn clone(&self) -> Self {
+        Self {
+            storage_config: self.storage_config.clone(),
+            capacity: self.capacity,
+            creation_time: self.creation_time.clone(),
+        }
+    }
+}
+
+impl<Storage: DynamicStorage<SimulationClockState>> Default for TimeControllerConfig<Storage> {
     fn default() -> Self {
-        let storage_config =
-            <Storage<SimulationClockState> as NamedConceptMgmt>::Configuration::default();
+        let storage_config = <Storage as NamedConceptMgmt>::Configuration::default();
         let storage_config = storage_config
-            .suffix(&SimulationClock::<UnixDatagramShmCountingBitSet>::default_suffix());
+            .suffix(&SimulationClock::<UnixDatagramShmCountingBitSet, Storage>::default_suffix());
         Self {
             storage_config,
             capacity: DEFAULT_SCHEDULE_CAPACITY,
@@ -102,7 +108,7 @@ impl Default for TimeControllerConfig {
     }
 }
 
-impl TimeControllerConfig {
+impl<Storage: DynamicStorage<SimulationClockState>> TimeControllerConfig<Storage> {
     pub fn capacity(mut self, value: usize) -> Self {
         self.capacity = value;
         self
@@ -113,22 +119,19 @@ impl TimeControllerConfig {
         self
     }
 
-    pub fn storage_config(
-        mut self,
-        value: <Storage<SimulationClockState> as NamedConceptMgmt>::Configuration,
-    ) -> Self {
+    pub fn storage_config(mut self, value: <Storage as NamedConceptMgmt>::Configuration) -> Self {
         self.storage_config = value;
         self
     }
 
-    pub fn get_storage_config(
-        &self,
-    ) -> &<Storage<SimulationClockState> as NamedConceptMgmt>::Configuration {
+    pub fn get_storage_config(&self) -> &<Storage as NamedConceptMgmt>::Configuration {
         &self.storage_config
     }
 }
 
-impl NamedConceptConfiguration for TimeControllerConfig {
+impl<Storage: DynamicStorage<SimulationClockState>> NamedConceptConfiguration
+    for TimeControllerConfig<Storage>
+{
     fn prefix(mut self, value: &FileName) -> Self {
         let config = self.storage_config.prefix(value);
         self.storage_config = config;
@@ -181,14 +184,15 @@ pub struct SimulationClockState {
 }
 
 #[derive(Debug)]
-pub struct SimulationClockBuilder<E: Event> {
+pub struct SimulationClockBuilder<E: Event, Storage: DynamicStorage<SimulationClockState>> {
     name: FileName,
-    config: TimeControllerConfig,
+    config: TimeControllerConfig<Storage>,
     event_config: E::Configuration,
     _event: PhantomData<E>,
 }
 
-impl<E: Event + 'static> ClockBuilder<E, SimulationClock<E>> for SimulationClockBuilder<E>
+impl<E: Event + 'static, Storage: DynamicStorage<SimulationClockState>>
+    ClockBuilder<E, SimulationClock<E, Storage>> for SimulationClockBuilder<E, Storage>
 where
     E::Listener: SynchronousMultiplexing,
 {
@@ -201,7 +205,7 @@ where
         }
     }
 
-    fn config(mut self, config: &TimeControllerConfig) -> Self {
+    fn config(mut self, config: &TimeControllerConfig<Storage>) -> Self {
         self.config = config.clone();
         self
     }
@@ -211,7 +215,7 @@ where
         self
     }
 
-    fn open_clock(self) -> Result<SimulationClock<E>, ClockBuilderOpenClockError> {
+    fn open_clock(self) -> Result<SimulationClock<E, Storage>, ClockBuilderOpenClockError> {
         match self.open_or_create_clock_state_storage() {
             Ok(storage) => Ok(SimulationClock {
                 name: self.name,
@@ -228,14 +232,14 @@ where
     }
 }
 
-impl<E: Event> SimulationClockBuilder<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> SimulationClockBuilder<E, Storage> {
     fn open_or_create_clock_state_storage(
         &self,
-    ) -> Result<Storage<SimulationClockState>, TimeControllerBuilderOpenOrCreateError> {
+    ) -> Result<Storage, TimeControllerBuilderOpenOrCreateError> {
         let capacity = self.config.capacity;
         Ok(fail!(from self,
                 when
-                <Storage<SimulationClockState> as DynamicStorage<SimulationClockState>>::Builder::new(
+                <Storage as DynamicStorage<SimulationClockState>>::Builder::new(
                     &self.name,
                 )
                 .config(&self.config.storage_config)
@@ -298,32 +302,40 @@ impl<E: Event> SimulationClockBuilder<E> {
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct SimulationClock<E: Event> {
+pub struct SimulationClock<E: Event, Storage: DynamicStorage<SimulationClockState>> {
     name: FileName,
-    state: Storage<SimulationClockState>,
+    state: Storage,
     event_config: E::Configuration,
 }
 
-unsafe impl<E: Event> Send for SimulationClock<E> {}
-unsafe impl<E: Event> Sync for SimulationClock<E> {}
-impl<E: Event> SteppedClock for SimulationClock<E> {}
+unsafe impl<E: Event, Storage: DynamicStorage<SimulationClockState>> Send
+    for SimulationClock<E, Storage>
+{
+}
+unsafe impl<E: Event, Storage: DynamicStorage<SimulationClockState>> Sync
+    for SimulationClock<E, Storage>
+{
+}
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> SteppedClock
+    for SimulationClock<E, Storage>
+{
+}
 
-impl<E: Event> Abandonable for SimulationClock<E>
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> Abandonable
+    for SimulationClock<E, Storage>
 where
     E::Listener: SynchronousMultiplexing,
 {
     // TODO iox2-2100: Add a `NodeDeathTest` that simulates the crash of a time controller.
     unsafe fn abandon_in_place(mut this: NonNull<Self>) {
         let this = unsafe { this.as_mut() };
-        unsafe {
-            <Storage<SimulationClockState> as Abandonable>::abandon_in_place(NonNull::from_mut(
-                &mut this.state,
-            ))
-        }
+        unsafe { <Storage as Abandonable>::abandon_in_place(NonNull::from_mut(&mut this.state)) }
     }
 }
 
-impl<E: Event> ClockListenerSchedule for SimulationClock<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> ClockListenerSchedule
+    for SimulationClock<E, Storage>
+{
     fn schedule_on<'a>(
         &'a self,
         timeout: Timeout,
@@ -387,7 +399,8 @@ impl<E: Event> ClockListenerSchedule for SimulationClock<E> {
     }
 }
 
-impl<E: Event + 'static> ClockReactorSchedule for SimulationClock<E>
+impl<E: Event + 'static, Storage: DynamicStorage<SimulationClockState>> ClockReactorSchedule
+    for SimulationClock<E, Storage>
 where
     E::Listener: SynchronousMultiplexing,
 {
@@ -456,13 +469,15 @@ where
     }
 }
 
-impl<E: Event> ClockNow for SimulationClock<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> ClockNow
+    for SimulationClock<E, Storage>
+{
     fn now(&self) -> Result<TimePoint, ClockNowError> {
         Ok(self.now_impl())
     }
 }
 
-impl<E: Event> SimulationClock<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> SimulationClock<E, Storage> {
     fn translate_timeout(&self, timeout: Timeout) -> TimePoint {
         match timeout {
             Timeout::At(timepoint) => timepoint,
@@ -504,12 +519,13 @@ impl<E: Event> SimulationClock<E> {
     }
 }
 
-impl<E: Event + 'static> Clock<E> for SimulationClock<E>
+impl<E: Event + 'static, Storage: DynamicStorage<SimulationClockState>> Clock<E>
+    for SimulationClock<E, Storage>
 where
     E::Listener: SynchronousMultiplexing,
 {
-    type Configuration = TimeControllerConfig;
-    type Builder = SimulationClockBuilder<E>;
+    type Configuration = TimeControllerConfig<Storage>;
+    type Builder = SimulationClockBuilder<E, Storage>;
     const HAS_TIME_CONTROLLER_SUPPORT: bool = true;
 
     fn blocking_sleep(&self, timeout: Timeout) -> Result<(), ClockBlockingSleepError> {
@@ -552,12 +568,14 @@ where
 pub const TIME_CONTROLLER_STATE_NAME: FileName =
     unsafe { FileName::new_unchecked_const(b"time_controller") };
 
-impl<E: Event> TimeControllerBuilder for SimulationClockBuilder<E> {
-    type TimeController = SimulationTimeController<E>;
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> TimeControllerBuilder
+    for SimulationClockBuilder<E, Storage>
+{
+    type TimeController = SimulationTimeController<E, Storage>;
 
     fn create_time_controller(
         self,
-    ) -> Result<SimulationTimeController<E>, TimeControllerBuilderCreateError> {
+    ) -> Result<SimulationTimeController<E, Storage>, TimeControllerBuilderCreateError> {
         let origin = "SimulationTimeControllerBuilder::create_time_controller()";
         let msg = "Unable to create the time controller for the simulation clock";
 
@@ -576,14 +594,11 @@ impl<E: Event> TimeControllerBuilder for SimulationClockBuilder<E> {
 
     fn open_time_controller(
         self,
-    ) -> Result<SimulationTimeController<E>, TimeControllerBuilderOpenError> {
+    ) -> Result<SimulationTimeController<E, Storage>, TimeControllerBuilderOpenError> {
         let origin = "SimulationTimeControllerBuilder::open_time_controller()";
         let msg = "Unable to open the time controller for the simulation clock";
 
-        let storage =
-            <Storage<SimulationClockState> as DynamicStorage<SimulationClockState>>::Builder::new(
-                &self.name,
-            )
+        let storage = <Storage as DynamicStorage<SimulationClockState>>::Builder::new(&self.name)
             .config(&self.config.storage_config)
             .open(AccessMode::ReadWrite);
         match storage {
@@ -617,7 +632,7 @@ impl<E: Event> TimeControllerBuilder for SimulationClockBuilder<E> {
 
     fn open_or_create_time_controller(
         self,
-    ) -> Result<SimulationTimeController<E>, TimeControllerBuilderOpenOrCreateError> {
+    ) -> Result<SimulationTimeController<E, Storage>, TimeControllerBuilderOpenOrCreateError> {
         let origin = "SimulationTimeControllerBuilder::open_or_create_time_controller()";
         let msg = "Unable to open/create the time controller for the simulation clock";
 
@@ -643,12 +658,14 @@ impl<E: Event> TimeControllerBuilder for SimulationClockBuilder<E> {
 }
 
 #[derive(Debug)]
-pub struct SimulationTimeController<E: Event> {
-    clock_state: Storage<SimulationClockState>,
+pub struct SimulationTimeController<E: Event, Storage: DynamicStorage<SimulationClockState>> {
+    clock_state: Storage,
     event_config: E::Configuration,
 }
 
-impl<E: Event> Drop for SimulationTimeController<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> Drop
+    for SimulationTimeController<E, Storage>
+{
     fn drop(&mut self) {
         self.clock_state
             .get()
@@ -657,18 +674,20 @@ impl<E: Event> Drop for SimulationTimeController<E> {
     }
 }
 
-impl<E: Event> Abandonable for SimulationTimeController<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> Abandonable
+    for SimulationTimeController<E, Storage>
+{
     unsafe fn abandon_in_place(mut this: NonNull<Self>) {
         let this = unsafe { this.as_mut() };
         unsafe {
-            <Storage<SimulationClockState> as Abandonable>::abandon_in_place(NonNull::from_mut(
-                &mut this.clock_state,
-            ))
+            <Storage as Abandonable>::abandon_in_place(NonNull::from_mut(&mut this.clock_state))
         }
     }
 }
 
-impl<E: Event> TimeController for SimulationTimeController<E> {
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> TimeController
+    for SimulationTimeController<E, Storage>
+{
     type E = E;
 
     fn advance(&self, duration: Duration) -> Result<TimePoint, TimeControllerAdvanceError> {
@@ -722,27 +741,23 @@ impl<E: Event> TimeController for SimulationTimeController<E> {
     }
 }
 
-impl<E: Event> NamedConceptMgmt for SimulationTimeController<E> {
-    type Configuration = TimeControllerConfig;
+impl<E: Event, Storage: DynamicStorage<SimulationClockState>> NamedConceptMgmt
+    for SimulationTimeController<E, Storage>
+{
+    type Configuration = TimeControllerConfig<Storage>;
 
     unsafe fn remove_cfg(
         name: &FileName,
         cfg: &Self::Configuration,
     ) -> Result<bool, crate::named_concept::NamedConceptRemoveError> {
-        let config = crate::dynamic_storage::posix_shared_memory::Configuration::<
-            SimulationClockState,
-        >::default();
-        let config = config.suffix(cfg.get_suffix());
+        let config = Storage::Configuration::default().suffix(cfg.get_suffix());
         unsafe { Storage::remove_cfg(name, &config) }
     }
 
     fn list_cfg(
         cfg: &Self::Configuration,
     ) -> Result<Vec<FileName>, crate::named_concept::NamedConceptListError> {
-        let config = crate::dynamic_storage::posix_shared_memory::Configuration::<
-            SimulationClockState,
-        >::default();
-        let config = config.suffix(cfg.get_suffix());
+        let config = Storage::Configuration::default().suffix(cfg.get_suffix());
         Storage::list_cfg(&config)
     }
 
@@ -750,10 +765,7 @@ impl<E: Event> NamedConceptMgmt for SimulationTimeController<E> {
         name: &FileName,
         cfg: &Self::Configuration,
     ) -> Result<bool, crate::named_concept::NamedConceptDoesExistError> {
-        let config = crate::dynamic_storage::posix_shared_memory::Configuration::<
-            SimulationClockState,
-        >::default();
-        let config = config.suffix(cfg.get_suffix());
+        let config = Storage::Configuration::default().suffix(cfg.get_suffix());
         Storage::does_exist_cfg(name, &config)
     }
 
